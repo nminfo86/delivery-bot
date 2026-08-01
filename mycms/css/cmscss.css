@@ -1,0 +1,1375 @@
+/*body {padding-top: 70px;}*/
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    margin: 0;
+    font-family: Arial;
+    /*font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";*/
+    font-size: 1.1rem;
+    font-weight: 400;
+    line-height: 1.5;
+    color: #858796;
+    text-align: left;
+    background-color: #fff;
+}
+
+body.rtl {
+    direction: rtl;
+    text-align: right;
+}
+
+body.ltr {
+    direction: ltr;
+    text-align: left;
+}
+
+/*  ================ Start Sweet alert custom css =====================*/
+/* sweet alert desable animation  */
+.swal-overlay--show-modal,
+.swal-modal {
+    animation: none !important;
+}
+
+.swal-overlay {
+    transition: none !important;
+}
+
+/* cancel vat button */
+.swal-button.cancel-vat {
+    background-color: #ffc107; /* desired color */
+    color: #fff;
+    border: none;
+}
+.swal-button.cancel-vat:hover {
+    background-color: #e0a800;
+}
+
+
+/* ================ End Sweet alert Custom css ======================*/
+
+.default-color {
+    background-color: #2bbbad !important;
+}
+
+#divLoadingcms {
+    margin: 0px;
+    padding: 0px;
+    position: fixed;
+    right: 0px;
+    top: 0px;
+    width: 100%;
+    height: 100%;
+    background-color: rgb(102, 102, 102);
+    z-index: 30001;
+    opacity: 0.7;
+}
+
+#divLoadingcms img {
+    position: absolute;
+    color: White;
+    top: 50%;
+    left: 45%;
+}
+
+.border-radion-0 {
+    border-radius: 0;
+}
+
+.fa-1_5x {
+    font-size: 1.5em;
+}
+
+.swal-text {
+    text-align: center;
+    font-size: large;
+    line-height: 1.5em;
+}
+
+.chefContainer {
+    padding-right: 15px;
+    padding-left: 15px;
+    margin-right: auto;
+    margin-left: auto;
+    width: 99%;
+}
+
+.resize-div {
+    max-width: 70%;
+    margin: 0 auto;
+}
+
+.alert {
+    padding: 10px;
+    margin-bottom: 2%;
+}
+
+.validation-div {
+    margin-bottom: 1%;
+    margin-top: 1%;
+}
+
+
+/***** form groupe custom css for some inputs like check box label and input *********/
+
+.custom-form-group {
+    flex-wrap: nowrap;
+}
+
+.custom-form-group label,
+.custom-form-group div {
+    width: 30%;
+}
+
+/*************************/
+/***************** START ADMIN PANEL CSS******************/
+
+.welcome-user h3 {
+    text-align: center !important;
+    margin-top: 2%;
+}
+
+/* .form-group label , .form-group .col-sm-2 {
+    text-align: end !important;
+} */
+.chart-area {
+    position: relative;
+    height: 10rem;
+    width: 100%;
+}
+
+.rtl-charts {
+    direction: rtl;
+}
+
+.rtl-charts * {
+    direction: rtl;
+    text-align: right;
+}
+
+@media (min-width: 768px) {
+    .chart-area {
+        height: 20rem;
+    }
+}
+
+.chart-bar {
+    position: relative;
+    height: 10rem;
+    width: 100%;
+}
+
+@media (min-width: 768px) {
+    .chart-bar {
+        height: 20rem;
+    }
+}
+
+.chart-pie {
+    position: relative;
+    height: 18.1em;
+    width: 100%;
+}
+
+@media only screen and (max-width: 449px) {
+    .chart-pie {
+        height: calc(20rem - 43px) !important;
+    }
+
+    .dB-card-body {
+        padding: 0.8em;
+    }
+
+    .dB-card-body .row {
+        display: flow-root;
+    }
+
+    .dB-card-body .text-xs {
+        font-size: 0.8em;
+    }
+
+    .dB-card-body .h5 {
+        font-size: 0.9em;
+    }
+
+    .dB-card-body .col-auto {
+        text-align: end;
+    }
+
+    .dB-card-body .col-auto .fa-2x {
+        font-size: 1.2em;
+    }
+}
+
+/***************** END ADMIN PANEL CSS******************/
+
+/***************** START ARTICLE MANAGEMENT CSS******************/
+
+.table-display {
+    /*width: auto;*/
+    margin: 1em 0 1em 0
+        /*display: table;*/
+}
+
+.table-display .btn {
+    margin-right: 3px;
+}
+
+
+#categoryBtn {
+    margin-bottom: 4%;
+}
+
+.upload-div {
+    margin-top: 10px;
+}
+
+#uploaderDiv .page-header,
+#uploaderDiv .page-header h3 {
+    margin-top: 1em;
+}
+
+#showMediaDiv .thumbnail {
+    border: none;
+    /*width: 200px;
+    height: 150px;*/
+
+}
+
+#showIMgDiv {
+    margin-bottom: 25px;
+}
+
+#showIMgDiv img {
+    max-height: 160px;
+    max-width: 250px;
+}
+
+
+#showVidDiv video {
+    max-height: 200px;
+    max-width: 250px;
+}
+
+#showVidDiv .media {
+    display: block;
+}
+
+#showMediaDiv .media-body {
+    vertical-align: bottom;
+
+}
+
+#showMediaDiv .media-body h4 {
+    margin-bottom: 10px;
+
+}
+
+#showMediaDiv .btn {
+    margin-right: 10px;
+}
+
+#showMediaDiv .delete-media {
+    padding: 6px;
+    box-shadow: none;
+    background-color: transparent;
+    border: none;
+    border-radius: 1px;
+    color: #c9302c;
+    transition: color 0.6s;
+    -webkit-transition: color 0.6s;
+    -moz-transition: color 0.6s;
+    -o-transition: color 0.6s;
+    -webkit-transition: background-color 0.3s;
+    -moz-transition: background-color 0.3s;
+    -o-transition: background-color 0.3s;
+}
+
+#showMediaDiv .delete-media:active:focus,
+#showMediaDiv .delete-media:focus,
+#showMediaDiv .delete-media:hover {
+    box-shadow: none;
+    color: #fff;
+    border: none;
+    border-radius: 1px;
+    background-color: #c9302c;
+}
+
+#showMediaDiv .cover-media {
+    padding: 6px;
+    box-shadow: none;
+    background-color: transparent;
+    border: none;
+    border-radius: 1px;
+    color: #5bc0de;
+    transition: color 0.6s;
+    -webkit-transition: color 0.6s;
+    -moz-transition: color 0.6s;
+    -o-transition: color 0.6s;
+    -webkit-transition: background-color 0.3s;
+    -moz-transition: background-color 0.3s;
+    -o-transition: background-color 0.3s;
+}
+
+#showMediaDiv .cover-media:active:focus,
+#showMediaDiv .cover-media:focus,
+#showMediaDiv .cover-media:hover {
+    box-shadow: none;
+    color: #fff;
+    border: none;
+    border-radius: 1px;
+    background-color: #5bc0de;
+}
+
+/***************** END ARTICLE MANAGEMENT CSS******************/
+
+/***************** START CATEGORY MANAGEMENT CSS******************/
+.largeCheckBox {
+    vertical-align: unset;
+}
+
+.largeCheckBox label {
+    line-height: 2em;
+}
+
+.largeCheckBox input[type=radio] {
+    width: 20px;
+    height: 20px;
+    margin-left: -25px;
+}
+
+.largeCheckBox input[type=checkbox] {
+    width: 20px;
+    height: 20px;
+    margin-left: -25px;
+}
+
+/* Add this CSS to your main stylesheet or in a <style> tag in the head */
+.color-palette {
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    gap: 5px;
+    max-width: 400px;
+    margin-top: 5px;
+}
+
+.color-option {
+    width: 30px;
+    height: 30px;
+    border-radius: 4px;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all 0.2s ease;
+}
+
+.color-option:hover {
+    transform: scale(1.1);
+    border: 2px solid #333;
+}
+
+.color-option.selected {
+    border: 3px solid #000;
+    transform: scale(1.15);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+
+/***************** END CATEGORY MANAGEMENT CSS******************/
+/***************** START CHARGES MANAGEMENT CSS******************/
+
+table.dataTable tbody td {
+    vertical-align: middle;
+}
+
+.total-footer-charges,
+.total-footer-sales,
+#diffrence {
+    font-size: 1.5em;
+    color: #17a2b8;
+    text-align: center;
+}
+
+@media only screen and (max-width: 576px) {
+
+    .panel-title h3 {
+        font-size: 1em;
+    }
+
+    .filterButtons {
+        margin-top: 1em;
+        text-align: center;
+    }
+
+    div.dataTables_wrapper div.dataTables_filter input {
+        width: 14em;
+    }
+
+    .total-footer-charges,
+    .total-footer-sales,
+    #diffrence {
+        font-size: 1.1em;
+    }
+
+    div.dataTables_wrapper div.dataTables_paginate {
+        font-size: 0.8em;
+    }
+}
+
+/***************** END CHARGES MANAGEMENT CSS******************/
+
+.supplement td {
+    padding: 0;
+    border-top: none;
+}
+
+.supplement td i {
+    font-size: 14px;
+    font-weight: 500;
+    margin-left: 5%;
+    color: #17a2b8;
+}
+
+/***************** START CHEF PANEL  CSS******************/
+#searchForm .input-group {
+    flex-wrap: nowrap;
+}
+
+#allOrdersDiv input,
+#allOrdersDiv select {
+    font-size: 1.3em;
+    /* line-height: 50px; */
+}
+
+#allOrdersDiv select option {
+    line-height: 50px;
+}
+
+#startTable tr {
+    height: 3em;
+    font-size: 2em;
+    cursor: pointer;
+    font-weight: 600;
+    background-color: rgba(0, 0, 0, .020);
+
+}
+
+#readyTable tr {
+    height: 3em;
+    font-size: 2em;
+    cursor: pointer;
+    font-weight: 600;
+    background-color: rgba(255, 160, 122, 0.253);
+
+}
+
+#startTable tr:first-child {
+    background-color: rgba(0, 0, 0, .075);
+}
+
+#readyTable tr:first-child {
+    background-color: rgba(255, 160, 122, 0.253);
+}
+
+#startTable .td-tableName,
+#readyTable .td-tableName {
+    color: lightcoral;
+    font-size: 0.75em;
+}
+
+#startTable .td-qte,
+#readyTable .td-qte {
+    text-align: right;
+}
+
+#startTable .td-comment,
+#readyTable .td-comment {
+    color: #17a2b8;
+    font-size: 0.90em;
+}
+
+#startTable .td-title i,
+#readyTable .td-title i {
+    font-size: 0.80em;
+    color: #e83e8c;
+}
+
+#startTable th,
+#startTable td,
+#readyTable th,
+#readyTable td {
+    vertical-align: middle;
+}
+
+
+#rePrintTableDiv tr {
+    font-size: 1.5em;
+    cursor: pointer;
+    font-weight: 400;
+    background-color: #f26e51;
+}
+
+#rePrintBtn button {
+    height: 3.2em;
+}
+
+
+@media only screen and (max-width: 767px) {
+
+    #startTable tr,
+    #readyTable tr {
+        font-size: 1.2em;
+        font-weight: 500;
+    }
+
+    #startTable td,
+    #readyTable td {
+        padding: 0.5em;
+    }
+
+    #rePrintTable tr {
+        font-size: 1.2em;
+        font-weight: 500;
+    }
+
+    #rePrintBtn button {
+        display: block;
+        width: 100%;
+        float: none;
+        height: 2.5em;
+    }
+}
+
+/***************** END CHEF PANEL CSS******************/
+
+/************** START WAITER PANEL CSS ******************/
+
+#allOrderstable tr {
+    height: 3em;
+    font-size: 1.35em;
+    cursor: pointer;
+    font-weight: 600;
+    background-color: rgba(0, 0, 0, .020);
+
+}
+
+#subOrderstable tr {
+    height: 3em;
+    font-size: 1.05em;
+    font-weight: 500;
+    background-color: rgba(0, 0, 0, .020);
+
+}
+
+#subOrderstable td {
+    vertical-align: middle;
+
+}
+
+#allOrderstable .td-tableName {
+    color: lightcoral;
+}
+
+#allOrderstable .td-getDetails {
+    text-align: right;
+}
+
+#allOrderstable .getDetails {
+    font-size: 1.1em;
+}
+
+#allOrderstable tr td {
+    white-space: nowrap;
+}
+
+@media only screen and (max-width: 767px) {
+    #allOrderstable tr {
+        font-size: 1.2em;
+    }
+
+    #subOrderstable tr {
+        font-size: 1em;
+    }
+
+    #subOrderstable td {
+        padding: 0.3rem;
+    }
+
+    #allOrderstable .getDetails {
+        font-size: 1em;
+    }
+
+    #allOrdersDiv input,
+    #allOrdersDiv select {
+        font-size: 1em;
+    }
+}
+
+/* This is for checkoutMenu */
+#orderDetail h4 {
+    color: #e83e8c;
+    text-align: center;
+    font-size: 1.4em;
+}
+
+/* This is for checkoutPanel */
+#orderDetail h3 {
+    color: #e83e8c;
+    text-align: center;
+    font-size: 1.4em;
+}
+
+
+/************** END WAITER PANEL CSS ******************/
+
+/************** START CHACKOUT MENU  CSS ******************/
+#caisseText {
+    font-size: 1.1em;
+    font-weight: 600;
+}
+
+#containerMenu {
+    width: 100%;
+    padding-right: 15px;
+    padding-left: 15px;
+    margin-right: auto;
+    margin-left: auto;
+}
+
+#containerMenu #orderDetail {
+    transition-duration: 500ms;
+    left: 10px;
+    background-color: #fff;
+}
+
+#containerMenu #orderDetail {
+    overflow-y: auto;
+    /* height: 40em; */
+}
+
+#categoriesMenu {
+    flex-wrap: wrap;
+}
+
+#categoriesMenu div {
+    background-color: lightcoral;
+    color: white;
+    padding: 0.5rem;
+    margin-right: 1%;
+    cursor: pointer;
+    display: inline-block;
+    width: fit-content;
+    text-align: center;
+    border-radius: 0;
+
+}
+
+#categoriesMenu .active {
+    background-color: #28a745;
+}
+
+#articlesMenu div[categoryid] {
+    overflow-y: auto;
+    height: 60%;
+}
+
+
+::-webkit-scrollbar-track {
+    box-shadow: inset 0 0 2px rgba(0, 0, 0, 0);
+    -webkit-box-shadow: inset 0 0 2px rgba(0, 0, 0, 0);
+    background-color: lightcoral;
+}
+
+::-webkit-scrollbar {
+    width: 2px;
+    height: 1px;
+    background-color: silver;
+}
+
+::-webkit-scrollbar-thumb {
+    background-color: silver;
+}
+
+.cardDiv {
+    cursor: pointer;
+    height: fit-content;
+}
+
+.card-bg {
+    min-height: 110px;
+    background-size: cover;
+    background-position: center center;
+}
+
+.card-bg-no-image {
+    min-height: 110px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.card-bg-no-image span {
+    color: white;
+    font-weight: bold;
+    text-align: center;
+    font-size: 1.25rem;
+}
+
+.card-footer {
+    text-align: center;
+    color: black;
+    padding: 1px 0.5px;
+    background-color: transparent;
+}
+
+
+.attributeValuesRadioGroup {
+    text-align: center;
+}
+
+.attributeValuesRadioGroup label {
+    display: inline-block;
+    text-align: center;
+    margin: 0 0.75em;
+    margin-bottom: 0.8em;
+}
+
+.attributeValuesRadioGroup label input[type="radio"] {
+    display: block;
+    margin: 0.5em auto;
+    width: 25px;
+    height: 25px;
+    cursor: pointer;
+}
+
+.page-header {
+    text-align: center;
+    margin: 5px 0 20px;
+    border-bottom: 1px solid #eee;
+}
+
+#subOrderstable tr[supplement="1"] {
+    font-size: 0.9em;
+    background-color: navajowhite;
+    font-weight: 600;
+}
+
+.custom-qty {
+    text-align: center;
+}
+
+.custom-qty .custom-qty-input {
+    color: #000;
+    display: inline-block;
+    vertical-align: top;
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 25px;
+    padding: 0 2px;
+    min-width: 31px;
+    text-align: center;
+    margin-right: 7%;
+    margin-left: 7%;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    position: relative;
+}
+
+.custom-qty .plus,
+.supplement-plus,
+.custom-qty .sw-plus {
+    cursor: pointer;
+    display: flex;
+    vertical-align: top;
+    color: white;
+    width: 27px;
+    height: 27px;
+    font: 25px/1 Arial,
+        sans-serif;
+    text-align: center;
+    /*border-radius: 50%;*/
+    line-height: -0.2;
+    background-color: #28a745;
+    align-content: flex-start;
+    justify-content: space-around;
+    align-items: center;
+}
+
+.custom-qty .minus,
+.custom-qty .supplement-minus,
+.custom-qty .sw-minus {
+    cursor: pointer;
+    display: flex;
+    vertical-align: top;
+    color: white;
+    width: 27px;
+    height: 27px;
+    font: 25px/1 Arial, sans-serif;
+    text-align: center;
+    /*border-radius: 50%;*/
+    background-clip: padding-box;
+    line-height: 0.85;
+    background-color: #e83e8c;
+    align-content: flex-start;
+    justify-content: space-around;
+    align-items: center;
+}
+
+.custom-qty .delete,
+.custom-qty .supplement-delete {
+    cursor: pointer;
+    display: flex;
+    vertical-align: top;
+    color: white;
+    width: 27px;
+    height: 27px;
+    text-align: center;
+    background-clip: padding-box;
+    line-height: 0.85;
+    background-color: #e83e8c;
+    align-content: flex-start;
+    justify-content: space-around;
+    align-items: center;
+}
+
+.custom-qty .minus:hover,
+.custom-qty .supplement-minus:hover,
+.custom-qty .sw-minus:hover {
+    background-color: #717fe0 !important;
+}
+
+.custom-qty .plus:hover,
+.custom-qty .supplement-plus:hover,
+.custom-qty .sw-plus:hover {
+    background-color: #717fe0 !important;
+}
+
+/*Prevent text selection*/
+.custom-qty span {
+
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+}
+
+.custom-qty input {
+    border: 0;
+    width: 2%;
+}
+
+.swal-content .custom-qty input {
+    border: 1px solid rgba(0, 0, 0, .65);
+    min-width: 70px;
+    margin-right: 5%;
+    margin-left: 5%;
+    padding: 1px 2px;
+}
+
+.custom-qty input::-webkit-outer-spin-button,
+.custom-qty input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.custom-qty input:disabled {
+    background-color: white;
+}
+
+/*the style of the radio buttons of the modify quantity swal*/
+.quick-qty-buttons {
+    margin-top: 15px;
+    width: 100%;
+}
+
+.qty-preset-btn {
+    display: inline-block;
+    padding: 6px 10px;
+    margin: 5px;
+    border-radius: 5px;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    cursor: pointer;
+    text-align: center;
+    min-width: 40px;
+    font-weight: bold;
+    transition: all 0.2s;
+}
+
+.qty-preset-btn:hover {
+    background-color: #e9ecef;
+}
+
+.qty-preset-btn.active {
+    background-color: #007bff;
+    color: white;
+    border-color: #007bff;
+}
+
+/* #supplementModal .largeCheckBox input[type=checkbox] {
+    width: 27px;
+    height: 27px;
+} */
+
+.placeDiv {
+    /*width: 150px;*/
+    margin: 0 auto;
+    margin-left: 25%;
+}
+
+.searcheTable {
+    text-align: center;
+}
+
+@media (min-width: 992px) and (max-width: 1199px) {
+    #categoriesMenu div {
+        width: fit-content;
+        padding: 0.5rem;
+    }
+
+    .card-bg {
+        min-height: 85px;
+    }
+
+    .card-bg-no-image {
+        min-height: 85px;
+    }
+
+    #containerMenu #orderDetail {
+        left: 10px;
+    }
+}
+
+@media only screen and (max-width: 991px) {
+
+    #categoriesMenu {
+        /* flex-wrap: nowrap; */
+        overflow-x: auto;
+        overflow-y: hidden;
+        white-space: nowrap;
+        font-size: 0.7em;
+    }
+
+    #categoriesMenu div {
+        width: fit-content;
+        padding: 0.4rem;
+    }
+
+    .card-bg {
+        min-height: 120px;
+        display: none;
+    }
+
+    .card-bg-no-image {
+        min-height: 45px;
+    }
+
+    .card-bg-no-image span {
+        font-size: 0.9em;
+        font-weight: unset;
+    }
+
+
+    .card-footer {
+        padding: 10px 0px;
+        background-color: whitesmoke;
+        font-size: 0.9em;
+    }
+
+    #containerMenu #orderDetail {
+        position: fixed;
+        left: -100%;
+        z-index: 4000;
+        height: 90%;
+        overflow-x: hidden;
+        overflow-y: scroll;
+    }
+
+    #subOrderstable tr[supplement="1"] {
+        font-size: 0.75em;
+
+    }
+}
+
+
+
+
+/************** END CHACKOUT MENU CSS ******************/
+
+/************** START CHACKOUT PANEL (CAISSE) CSS ******************/
+
+#searchForm .input-group {
+    flex-wrap: initial;
+    width: 100%;
+}
+
+/************** END CHACKOUT PANEL CSS ******************/
+
+/***************** START CUSTOMER LEAVING CSS******************/
+.circle {
+    margin: 18px;
+    margin-top: 36px;
+    display: inline-block;
+    padding: 16px;
+    text-align: center;
+    width: 180px;
+    height: 180px;
+    border-radius: 50%;
+    border: 2px solid #1d2087;
+}
+
+.circle::before,
+.circle::after {
+    position: absolute;
+    z-index: -1;
+    display: block;
+    content: '';
+}
+
+.circle,
+.circle::before,
+.circle::after {
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+    -webkit-transition: all .5s;
+    transition: all .5s;
+}
+
+.circle {
+    position: relative;
+    z-index: 2;
+    background-color: #fff;
+    border: 2px solid #5c5eae;
+    color: #5c5eae;
+    line-height: 50px;
+    overflow: hidden;
+    opacity: 0.8;
+}
+
+.circle:hover {
+    color: #fff;
+}
+
+.circle::after {
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    -webkit-transform: scale(.5);
+    transform: scale(.5);
+}
+
+.circle:hover::after {
+    background: #5c5eae;
+    border-radius: 50%;
+    -webkit-transform: scale(.9);
+    transform: scale(.9);
+}
+
+
+.circle a {
+    text-decoration: none;
+    color: #1d2087;
+}
+
+.circle h2 {
+    margin-top: 25%;
+}
+
+.circle h2 small {
+    color: #1d2087;
+    font-weight: 700;
+}
+
+.circle p {
+    font-size: 20px;
+    line-height: 3em;
+}
+
+
+@media (min-width: 768px) and (max-width: 991px) {
+    .circle {
+        width: 150px;
+        height: 150px;
+    }
+
+    .circle p {
+        font-size: 18px;
+    }
+
+    .circle h2 {
+        font-size: 26px;
+    }
+}
+
+@media (min-width: 450px) and (max-width: 767px) {
+    .circle {
+        width: 150px;
+        height: 150px;
+    }
+
+    .circle p {
+        font-size: 18px;
+    }
+
+    .circle h2 {
+        font-size: 28px;
+    }
+}
+
+@media only screen and (max-width: 449px) {
+    .circle {
+        width: 120px;
+        height: 120px;
+    }
+
+    .circle p {
+        font-size: 14px;
+    }
+
+    .circle h2 {
+        font-size: 22px;
+    }
+}
+
+/******************* TV Front end CSS*************************************/
+#tv-body {
+    margin-top: 2%;
+    font-family: Arial;
+    background-color: #f8c985;
+}
+
+.company-logo {
+    margin-left: 0%;
+    margin-right: 0%;
+    text-align: center;
+}
+
+.company-logo img {
+    max-width: 230px;
+    max-height: 230px;
+    object-fit: contain;
+}
+
+.clock-center {
+    margin: 0px;
+    padding: 0px;
+    position: fixed;
+    right: 0px;
+    top: 0px;
+    width: 100%;
+    height: 100%;
+}
+
+/* .clock-center .company-logo {
+    top: 25%;
+} */
+
+.clock-center .tables-select {
+    top: 35%;
+    left: 42%;
+}
+
+.clock-center select {
+    background-color: transparent;
+    color: #343a40;
+    border-color: #343a40
+}
+
+.clock-center button {
+    position: absolute;
+    top: 68%;
+    left: 48%;
+}
+
+#tv-new-orders-div {
+    text-align: center;
+    padding-top: 17%;
+}
+
+#tv-new-orders-div h1 {
+    font-size: 7em;
+    color: #ab3909;
+}
+
+#tv-new-orders-div h2 {
+    font-size: 5em;
+}
+
+#tv-old-orders-div {
+    margin-top: 5%;
+    text-align: center;
+}
+
+#tv-old-orders-div h2 {
+    font-size: 2.3em;
+    color: #ab3909;
+}
+
+#tv-old-orders-div h4 {
+    font-size: 2em;
+    margin-left: 5%;
+}
+
+/************** Text animation ******************/
+/* subtle zoom to attention and then back */
+.pop-outin {
+    animation: 3.5s anim-popoutin ease infinite;
+}
+
+@keyframes anim-popoutin {
+    0% {
+        color: black;
+        transform: scale(0);
+        opacity: 0;
+        text-shadow: 0 0 0 rgba(0, 0, 0, 0);
+    }
+
+    25% {
+        color: #ab3909;
+        transform: scale(1.3);
+        opacity: 1;
+        text-shadow: 3px 10px 5px rgba(0, 0, 0, 0.5);
+    }
+
+    50% {
+        color: black;
+        transform: scale(1);
+        opacity: 1;
+        text-shadow: 1px 0 0 rgba(0, 0, 0, 0);
+    }
+
+}
+
+.lineUp {
+    animation: 3.5s anim-lineUp ease-out infinite;
+}
+
+@keyframes anim-lineUp {
+    0% {
+        opacity: 0;
+        transform: translateY(80%);
+    }
+
+    20% {
+        opacity: 0;
+    }
+
+    50% {
+        opacity: 1;
+        transform: translateY(0%);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateY(0%);
+    }
+}
+
+/*************************************************/
+
+@media only screen and (max-width: 449px) {
+
+    #tv-new-orders-div h1 {
+        font-size: 2.4em;
+    }
+
+    #tv-new-orders-div h2 {
+        font-size: 1.8em;
+    }
+
+    .clock-center .company-logo {
+        width: 120px;
+        height: 120px;
+        top: 20%;
+        margin-left: 35%;
+    }
+
+    .clock-center select {
+        text-align: center;
+    }
+
+    .clock-center .tables-select {
+        top: 30%;
+        left: 18%;
+
+    }
+
+    .clock-center button {
+        position: absolute;
+        top: 70%;
+        left: 40%;
+    }
+
+    .company-logo {
+        width: 120px;
+        height: 120px;
+        top: 5%;
+        margin-left: 35%;
+    }
+
+    .company-logo img {
+        max-width: 120px;
+        max-height: 120px;
+        object-fit: contain;
+    }
+
+
+    #tv-old-orders-div {
+        text-align: center;
+        margin-top: 15%;
+    }
+
+    #tv-old-orders-div h2 {
+        font-size: 1.2em;
+    }
+
+    #tv-old-orders-div h4 {
+        font-size: 0.9em;
+
+    }
+}
+
+
+
+
+/********************************/
+
+
+
+/*******************************/
+
+/*******************TV Front end CSS *************************************/
+
+
+/***************** CUSTOMER LEAVING CSS******************/
+
+/* footer */
+footer {
+    padding: 2em 0;
+    /*margin: 3em 0;*/
+    border-top: 1px solid #ddd;
+    color: #999;
+    text-align: center;
+}
+
+/********* START REPORTS PAGES CSS ************************************/
+
+#dateTextTitle {
+    white-space: nowrap;
+    display: inline;
+}
+
+@media (max-width: 767.98px) {
+    #dateTextTitle {
+        display: block;
+        margin-top: 4px;
+    }
+}

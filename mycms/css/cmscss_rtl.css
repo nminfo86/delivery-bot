@@ -1,0 +1,249 @@
+
+/* RTL CSS for CMS
+ * This file contains styles for right-to-left (RTL) layout.
+ */
+body.rtl *:not(.fas):not([class*="fa-"]) {
+font-family: sans-serif !important;
+text-align: right ;
+}
+
+body.rtl .btn-group {
+    flex-direction: row-reverse;
+}
+
+.rtl.input-group {
+    flex-direction: row-reverse;
+}
+
+.input-group{
+    flex-direction: row-reverse;
+}
+
+ul.rtl {
+padding-right: 0.6% ;
+margin-right: 0 ;
+font-family: sans-serif !important;
+
+}
+
+.dropdown-item {
+text-align: right !important;
+}
+
+div.swal-overlay ,div.swal-overlay div, div.swal-overlay button{
+    text-align: center !important;
+}
+
+.largeCheckBox input[type=checkbox], .largeCheckBox input[type=radio]{
+    margin-left: 5px;
+}
+
+@media screen and (max-width: 767px) {
+    div.dataTables_wrapper div.dataTables_paginate ul.pagination {
+        justify-content: left !important;
+    }
+}
+
+#searchForm .input-group.start-date {
+    flex-direction: row-reverse;
+}
+
+form button i{
+      margin-right: 0 !important;
+    margin-left: 5px;
+}
+
+button#showFilterOptions {
+    margin-right: 0.25rem !important;
+}
+
+
+.custom-qty .minus, .custom-qty .plus, .custom-qty .supplement-minus, 
+.custom-qty .sw-minus {
+   align-items: normal;
+}
+
+#orderDetail .btn-toolbar button .fas{
+    margin-right: 0 !important;
+    margin-left: 5px !important;
+}
+
+#subOrderstable .action{
+    flex-direction: row-reverse;
+}
+
+#subOrderstable .commentSubOrdere{
+    margin-right: 0;
+    margin-left: 10px;
+}
+
+select {
+    text-align: center;
+    text-align-last: center; /* For most modern browsers */
+}
+select option{
+    text-align: center !important;
+}
+
+#readyTable.rtl {
+   direction: rtl;
+}
+
+.panel-title h3, .total-footer-charges, .total-footer-sales, .total-footer-charges #diffrence{
+ text-align: center !important;
+}
+
+#optionsDiv h3, #uploaderDiv h3 , #adminDiv h3 , #attributesDiv h3 , #priceDiv h3{
+    text-align: center !important;
+}
+
+.fa-chart-line {
+    transform: scaleX(-1);
+}
+
+/************************************************************************************************
+/* ********************** RTL specific styles for Main UI **************************************/
+
+.mobile-nav {
+    padding-left: 0 !important;
+    /* direction: ltr !important; */
+flex-direction: row-reverse !important;
+}
+
+.mobile-nav .input-container {
+    flex-direction: row-reverse !important;
+}   
+
+.main-content-wrapper .header-area .cart-fav-search a img {
+    margin-right: 0;
+    margin-left: 10px;
+}
+
+/***** Categories page  ******/
+
+.main-content-wrapper .products-catagories-area {
+margin-left: 0 !important;
+    margin-right: 320 !important;
+}
+
+.single-products-catagory .hover-content {
+    position: absolute;
+    left: 0px !important;
+    right: 40px !important;
+}
+@media only screen and (max-width: 767px) {
+    .main-content-wrapper .products-catagories-area {
+        margin-right: 0 !important;
+    }
+}
+
+#subOrderstable  #custom-qty{
+
+    margin-right: 0;
+    margin-left: 3px;
+}
+#subOrderstable  .comment .commentSubOrdere{
+
+margin-top: 11%;
+}
+#subOrderstable  .comment .custom-qty{
+
+margin-top: 11%;
+}
+
+/*******  Shop Page  **********/
+.main-content-wrapper .amado_product_area {
+    margin-left: 0 !important;
+    margin-right: 320 !important;
+}
+
+@media only screen and (max-width: 767px) {
+    .main-content-wrapper .amado_product_area {
+        margin-right: 0 !important;
+    }
+}
+
+/***** product details page ********/
+
+.main-content-wrapper .single-product-area {
+    margin-right: 320px;
+}
+@media only screen and (max-width: 767px) {
+    .main-content-wrapper .single-product-area {
+        margin-right: 0;
+    }
+}
+
+.main-content-wrapper .single-product-area .single_product_desc .cart .amado-btn {
+margin-left: 0 !important;
+    margin-right: 15% !important;
+}
+.main-content-wrapper .single-product-area .single_product_desc 
+.cart .quantity .qty-minus
+{
+  left : 0 !important;
+  right: auto !important;
+}
+.main-content-wrapper .single-product-area .single_product_desc 
+.cart .quantity .qty-plus
+{
+  left : 0 !important;
+  right: auto !important;
+}
+
+
+
+/***** cart page ********/
+.main-content-wrapper .cart-table-area {
+    margin-right: 280px;
+}
+@media only screen and (max-width: 767px) {
+    .main-content-wrapper .cart-table-area {
+        margin-right: 0;
+    }
+}
+.amado-btn{
+    text-align: center !important;
+}
+#orderForm .placeDiv{
+    justify-content: center;
+    flex-direction: row-reverse;
+}
+.cart-table .custom-qty {
+    flex-direction: row-reverse;
+}
+.cart-table td.delete .commentSubOrdere{
+
+    margin-right: 0;
+    margin-left: 10px;
+}
+.custom-qty .custom-qty-input {
+text-align: center !important;
+}
+
+/***** Progression Modal ********/
+
+.modal-content {
+    direction: rtl ;
+
+}
+.modal-footer {
+    flex-flow: row-reverse;
+}
+.modal-header .close {
+    margin-right: auto;
+    margin-left: -1rem;
+}
+
+/***** mobile nav search ********/
+.input-container {
+ 
+    margin-right: -5px;
+}
+
+.nav-close i , .search-close i {
+    margin-right: 12px;
+}
+.search-wrapper {
+ direction: ltr;
+}

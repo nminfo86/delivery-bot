@@ -1,0 +1,5 @@
+
+db user : c3_bot_user
+db psw :hZ97iEUutjDG@
+
+db name: c3_bot_db

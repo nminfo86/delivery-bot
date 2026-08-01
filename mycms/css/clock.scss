@@ -1,0 +1,127 @@
+$orange: #F68657;
+$green: #70bd63;
+
+.clock {
+    background: $orange;
+    width: 50vmin;
+    height: 50vmin;
+    border-radius: 50%;
+    position: relative;
+
+    &:before {
+        content: '';
+        position: absolute;
+        margin: auto;
+        width: 3%;
+        height: 12%;
+        background: $green;
+        left: 0;
+        right: 0;
+        top: -10%;
+        z-index: -1;
+        transform: rotate(10deg);
+    }
+
+    &:after {
+        content: '';
+        position: absolute;
+        margin: auto;
+        width: 8%;
+        height: 16%;
+        background: $green;
+        left: 0;
+        right: 15%;
+        top: -10%;
+        z-index: -1;
+        transform: rotate(-40deg);
+        border-radius: 100% 30% 50% 0;
+    }
+}
+
+.middle1 {
+    position: absolute;
+    margin: auto;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 5%;
+    height: 5%;
+    background: darken($orange, 8);
+    border-radius: 50%;
+    z-index: 1;
+}
+
+.middle {
+    position: absolute;
+    margin: auto;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 5%;
+    height: 5%;
+    background: darken($orange, 10);
+    border-radius: 50%;
+
+
+    &:before {
+        content: '';
+        position: absolute;
+        background: darken($orange, 3);
+        width: 80%;
+        height: 80%;
+        border-radius: 50%;
+        left: 400%;
+        top: 150%;
+        box-shadow: -20vmin -10vmin 0 0 darken($orange, 3),
+            -10vmin -24vmin 0 0 darken($orange, 3),
+            4vmin 10vmin 0 0 darken($orange, 3),
+            -20vmin 14vmin 0 0 darken($orange, 3),
+            -30vmin 4vmin 0 0 darken($orange, 3);
+    }
+
+    &:after {
+        content: '';
+        position: absolute;
+        background: darken($orange, 3);
+        width: 90%;
+        height: 90%;
+        border-radius: 50%;
+        left: 400%;
+        top: 150%;
+        box-shadow: -26vmin -16vmin 0 0 darken($orange, 3),
+            6vmin -14vmin 0 0 darken($orange, 3),
+            -10vmin 8vmin 0 0 darken($orange, 3),
+            -4vmin 18vmin 0 0 darken($orange, 3),
+            12vmin -5vmin 0 0 darken($orange, 3);
+    }
+}
+
+.hour {
+    position: absolute;
+    margin: auto;
+    left: 49%;
+    bottom: 50%;
+    background: darken($orange, 30);
+    width: 2%;
+    height: 40%;
+    transform: rotate(0);
+    transform-origin: 50% 100%;
+}
+
+.minute {
+    @extend .hour;
+    transform: rotate(0);
+    height: 48%;
+    background: darken($orange, 20);
+}
+
+.second {
+    @extend .hour;
+    background: lighten($orange, 10);
+    width: 1%;
+    left: 49.5%;
+    transform: rotate(0);
+    height: 48%;
+}

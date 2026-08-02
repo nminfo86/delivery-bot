@@ -111,9 +111,11 @@ class RestaurantHandler {
         $this->sendMessage($this->chat_id, $text, json_encode(['inline_keyboard' => $buttons]));
     }
 
-    private function listOrders($statusCondition, $title) {
-        // If it's an IN() clause, inject directly securely, otherwise use standard equal
-        $condition = (strpos($statusCondition, 'IN') !== false) ? "progression $statusCondition" : "progression = '$statusCondition'";
+   private function listOrders($statusCondition, $title) {
+        // Fix: Check specifically if it starts with "IN(" to avoid triggering on words like "PENDING"
+        $condition = (strpos(trim($statusCondition), 'IN(') === 0) 
+            ? "progression $statusCondition" 
+            : "progression = '$statusCondition'";
         
         $sql = "SELECT id, code, totalTtc, DATE_FORMAT(creationDate, '%H:%i') as time 
                 FROM ordere 
@@ -142,9 +144,9 @@ class RestaurantHandler {
         $this->sendMessage($this->chat_id, "📋 <b>$title</b>\nSélectionnez une commande pour voir les détails :", json_encode(['inline_keyboard' => $buttons]));
     }
 
-    private function showOrderDetails($order_id) {
-        // 1. Fetch main order using legacy 'ordere' table
-        $stmt = $this->pdo->prepare("SELECT code, progression, totalTtc, comment, DATE_FORMAT(creationDate, '%H:%i') as time FROM ordere WHERE id = :oid AND company_id = :cid LIMIT 1");
+   private function showOrderDetails($order_id) {
+        // 1. Fetch main order, including the newly mapped delivery coordinates and notes
+        $stmt = $this->pdo->prepare("SELECT code, progression, totalTtc, comment, delivery_lat, delivery_lon, delivery_address_note, DATE_FORMAT(creationDate, '%H:%i') as time FROM ordere WHERE id = :oid AND company_id = :cid LIMIT 1");
         $stmt->execute(['oid' => $order_id, 'cid' => $this->company_id]);
         $order = $stmt->fetch();
 
@@ -153,7 +155,7 @@ class RestaurantHandler {
             return;
         }
 
-        // 2. Fetch items using legacy 'suborder' joined with 'object' and 'attribute_value'
+        // 2. Fetch items
         $sql = "SELECT s.quantity, s.subTotal, o.title, av.attributeValue 
                 FROM suborder s 
                 LEFT JOIN object o ON s.object_id = o.id 
@@ -174,28 +176,32 @@ class RestaurantHandler {
         }
         
         $text .= "━━━━━━━━━━━━━━━━━\n";
-        $text .= "💰 <b>Total : " . $order['totalTtc'] . " DA</b>\n";
-        
+        $text .= "💰 <b>Total : " . $order['totalTtc'] . " DA</b>\n\n";
+
+        // Display Delivery Details from the native schema fields
+        $text .= "📍 <b>Détails de Livraison :</b>\n";
+        if (!empty($order['delivery_lat']) && !empty($order['delivery_lon'])) {
+            $mapsLink = "https://www.google.com/maps?q={$order['delivery_lat']},{$order['delivery_lon']}";
+            $text .= "🗺️ <a href='{$mapsLink}'>Ouvrir dans Google Maps</a>\n";
+        } elseif (!empty($order['delivery_address_note'])) {
+            $text .= "🏘️ " . htmlspecialchars($order['delivery_address_note']) . "\n";
+        }
         if (!empty($order['comment'])) {
-            $text .= "\n📝 <i>Note client: " . $order['comment'] . "</i>";
+            $text .= "📝 <i>" . $order['comment'] . "</i>";
         }
 
-        // 4. Generate action buttons based on the progression status
+        // 4. Generate action buttons
         $buttons = [];
-        
         if ($order['progression'] === 'PENDING_RESTAURANT') {
             $buttons[] = [['text' => "✅ Accepter & Chercher un livreur", 'callback_data' => "accept_" . $order_id]];
             $buttons[] = [['text' => "❌ Refuser la commande", 'callback_data' => "cancel_" . $order_id]];
-            
         } elseif ($order['progression'] === 'BID_SELECTED') {
-            // A driver has been confirmed, kitchen needs to mark food as ready when done
             $buttons[] = [['text' => "🛎️ La commande est prête !", 'callback_data' => "ready_" . $order_id]];
-            
         } elseif ($order['progression'] === 'AWAITING_BID') {
             $buttons[] = [['text' => "⏳ En attente d'un livreur...", 'callback_data' => "dash"]];
         }
 
-        $buttons[] = [['text' => "🔙 Retour au tableau de bord", 'callback_data' => 'dash']];
+        $buttons[] = [['text' => "🔙 Retour", 'callback_data' => 'dash']];
 
         $this->sendMessage($this->chat_id, $text, json_encode(['inline_keyboard' => $buttons]));
     }

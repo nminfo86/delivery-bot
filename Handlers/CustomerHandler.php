@@ -27,6 +27,16 @@ class CustomerHandler {
                 $this->sendWelcome();
                 return;
             }
+            // Ajout des commandes pour le menu bleu
+            if ($text === '/devenir_livreur') {
+                $this->sendMessage($this->chat_id, "🛵 <b>Devenir Livreur</b>\nEnvoyez-nous vos informations (Nom, Prénom, Numéro, Wilaya, Type de moto) pour valider votre compte !");
+                return;
+            }
+
+            if ($text === '/devenir_restaurateur') {
+                $this->sendMessage($this->chat_id, "👨‍🍳 <b>Devenir Restaurateur</b>\nContactez l'administration pour ajouter votre restaurant sur la plateforme.");
+                return;
+            }
 
             // 1. Intercept GPS Location
             if (isset($message['location'])) {
@@ -60,6 +70,18 @@ class CustomerHandler {
 
         if ($callback) {
             $data = $callback['data'];
+
+            // Nouvelles actions des boutons d'accueil
+            if ($data === 'start_order') {
+                $this->showCitySelection();
+                return;
+            } elseif ($data === 'register_restaurant') {
+                $this->sendMessage($this->chat_id, "👨‍🍳 <b>Devenir Restaurateur</b>\nContactez l'administration pour ajouter votre menu sur la plateforme.");
+                return;
+            } elseif ($data === 'register_driver') {
+                $this->sendMessage($this->chat_id, "🛵 <b>Devenir Livreur</b>\nEnvoyez vos informations à l'administration pour créer votre profil livreur.");
+                return;
+            }
 
             // Add this right at the top of your inline button routing
             if ($data === 'ignore_closed') {
@@ -296,17 +318,45 @@ class CustomerHandler {
         $stmt->execute(['tid' => $this->telegram_id]);
     }
 
-    private function sendWelcome() {
-        $text = "👋 Bienvenue sur l'application de livraison DZ !\n\nComment souhaitez-vous trouver les restaurants autour de vous ?";
+   private function sendWelcome() {
+        // 1. Si le user est déjà Restaurateur (mais utilise le bot en mode client)
+        if ($this->user_role === 'restaurant') {
+            $this->sendMessage($this->chat_id, "👨‍🍳 <b>Mode Client Actif</b>\n(Utilisez /cuisine pour revenir à votre menu restaurant).");
+            $this->showCitySelection();
+            return;
+        }
+        
+        // 2. Si le user est déjà Livreur (mais utilise le bot en mode client)
+        if ($this->user_role === 'driver') {
+            $this->sendMessage($this->chat_id, "🛵 <b>Mode Client Actif</b>\n(Utilisez /livreur pour revenir à votre tableau de bord).");
+            $this->showCitySelection();
+            return;
+        }
+
+        // 3. Si Client existant (il a déjà une commune ou une latitude enregistrée en base)
+        if (!empty($this->user_data['commune_name']) || !empty($this->user_data['latitude'])) {
+            $this->showCitySelection();
+            return;
+        }
+
+        // 4. Toute première connexion (Nouveau Client)
+        $text = "👋 Bienvenue sur <b>DZ FOOD DELIVERY</b> !\nQue souhaitez-vous faire ?";
+        $buttons = [
+            [['text' => "🍕 Commandez un repas ..", 'callback_data' => "start_order"]],
+            [['text' => "👨‍🍳 Ajouter votre Restaurant", 'callback_data' => "register_restaurant"]],
+            [['text' => "🛵 Devenir Livreur", 'callback_data' => "register_driver"]]
+        ];
+        
+        $this->sendMessage($this->chat_id, $text, json_encode(['inline_keyboard' => $buttons]));
+    }
+
+    private function showCitySelection() {
+        $text = "Pour trouver des restaurants, choisir votre ville ou partager votre position 📍:";
         $gpsKeyboard = ['keyboard' => [[['text' => '📍 Partager ma position GPS', 'request_location' => true]]], 'resize_keyboard' => true, 'one_time_keyboard' => true];
         $this->sendMessage($this->chat_id, $text, json_encode($gpsKeyboard));
 
         $inlineButtons = [[['text' => "🗺️ Choisir ma ville manuellement", 'callback_data' => "manual_loc"]]];
-        if ($this->user_role === 'customer') $inlineButtons[] = [['text' => "🚴 Devenir Livreur", 'callback_data' => "register_driver"]];
-        if ($this->user_role === 'restaurant') $inlineButtons[] = [['text' => "🔄 Basculer en Mode Cuisine", 'callback_data' => "switch_kitchen"]];
-        if ($this->user_role === 'driver') $inlineButtons[] = [['text' => "🔄 Basculer en Mode Livreur", 'callback_data' => "switch_driver"]];
-
-        $this->sendMessage($this->chat_id, "Ou utilisez les options ci-dessous :", json_encode(['inline_keyboard' => $inlineButtons]));
+        $this->sendMessage($this->chat_id, "👇 Choisir une option :", json_encode(['inline_keyboard' => $inlineButtons]));
     }
 
     private function showActiveWilayas() {

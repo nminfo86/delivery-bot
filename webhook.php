@@ -46,6 +46,12 @@ $callback_query = $update['callback_query'] ?? null;
 $telegram_id = $message['from']['id'] ?? $callback_query['from']['id'] ?? null;
 $chat_id = $message['chat']['id'] ?? $callback_query['message']['chat']['id'] ?? null;
 
+// Intercepter et ignorer les messages vocaux ou audio
+if (isset($message['voice']) || isset($message['audio']) || isset($message['video_note'])) {
+    sendTelegramMessage($chat_id, "⚠️ Désolé, je ne peux pas écouter les messages vocaux. Veuillez utiliser les boutons du menu ou du texte.");
+    exit;
+}
+
 if (!$telegram_id || !$chat_id) exit;
 
 // 6. Identity & Mode Detection Logic
@@ -100,6 +106,36 @@ if ($callback_query) {
     }
 }
 
+// 8.6 INTERCEPT MODE SWITCHING VIA TEXT COMMANDS (Left Menu)
+$text = $message['text'] ?? '';
+
+if (in_array($text, ['/client', '/cuisine', '/livreur'])) {
+    $new_mode = '';
+    if ($text === '/client') $new_mode = 'customer';
+    if ($text === '/cuisine') $new_mode = 'kitchen';
+    if ($text === '/livreur') $new_mode = 'driver';
+
+    // Security Gate: Prevent normal customers from accessing staff modes
+    if ($new_mode === 'kitchen' && $user['role'] !== 'restaurant') {
+        sendTelegramMessage($chat_id, "🚫 Accès refusé. Vous n'êtes pas restaurateur."); 
+        exit;
+    }
+    if ($new_mode === 'driver' && $user['role'] !== 'driver') {
+        sendTelegramMessage($chat_id, "🚫 Accès refusé. Vous n'êtes pas livreur."); 
+        exit;
+    }
+
+    // Update the user's mode in the database
+    $stmt = $pdo->prepare("UPDATE telegram_users SET current_mode = :mode, current_state = NULL WHERE telegram_id = :tid");
+    $stmt->execute(['mode' => $new_mode, 'tid' => $telegram_id]);
+
+    $modeNames = ['customer' => 'Client', 'kitchen' => 'Cuisine', 'driver' => 'Livreur'];
+    
+    // Clear the old keyboard and confirm the switch
+    $removeKeyboard = json_encode(['remove_keyboard' => true]);
+    sendTelegramMessage($chat_id, "✅ Interface changée vers : Mode <b>" . $modeNames[$new_mode] . "</b>.\n\nTapez /start pour afficher votre nouveau menu.", $removeKeyboard);
+    exit;
+}
 // 9. The Core Router
 $activeMode = $user['current_mode'];
 

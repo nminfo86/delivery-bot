@@ -1,11 +1,26 @@
 <?php
-// 1. Load your existing eatSmartly database connection class
+// 1. Load your existing eatSmartly database & initialization files
+require_once __DIR__ . '/mycms/php/functions.php';
+require_once __DIR__ . '/mycms/php/Config.php';
+require_once __DIR__ . '/mycms/php/init.php';
 require_once __DIR__ . '/mycms/php/Connection.php';
+require_once __DIR__ . '/mycms/php/Ordere.php';
+require_once __DIR__ . '/mycms/php/SubOrder.php';
+require_once __DIR__ . '/mycms/php/JsonOrdere.php';
+require_once __DIR__ . '/mycms/php/JsonSubOrder.php';
+require_once __DIR__ . '/mycms/php/JsonObject.php';
+require_once __DIR__ . '/mycms/php/JsonPrice.php';
+require_once __DIR__ . '/mycms/php/JsonCategory.php';
 
 // 2. Load the isolated Actor Handlers 
 require_once __DIR__ . '/Handlers/CustomerHandler.php';
 require_once __DIR__ . '/Handlers/RestaurantHandler.php';
 require_once __DIR__ . '/Handlers/DriverHandler.php';
+
+// Ensure PHP session is active for mycms class compatibility
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
     
 // 3. Connect to Database reusing your exact eatSmartly credentials
 try {
@@ -22,29 +37,24 @@ try {
 $content = file_get_contents("php://input");
 $update = json_decode($content, true);
 
-if (!$update) {
-    exit;
-}
+if (!$update) exit;
 
-// 5. Extract User Identifiers safely (works for text messages and inline button clicks)
+// 5. Extract User Identifiers safely
 $message = $update['message'] ?? null;
 $callback_query = $update['callback_query'] ?? null;
 
 $telegram_id = $message['from']['id'] ?? $callback_query['from']['id'] ?? null;
 $chat_id = $message['chat']['id'] ?? $callback_query['message']['chat']['id'] ?? null;
 
-if (!$telegram_id || !$chat_id) {
-    exit;
-}
+if (!$telegram_id || !$chat_id) exit;
 
 // 6. Identity & Mode Detection Logic
-$stmt = $pdo->prepare("SELECT id, role, current_mode, status FROM telegram_users WHERE telegram_id = :tid LIMIT 1");
+$stmt = $pdo->prepare("SELECT id, role, current_mode, status, current_state, phone, latitude, longitude, commune_name FROM telegram_users WHERE telegram_id = :tid LIMIT 1");
 $stmt->execute(['tid' => $telegram_id]);
 $user = $stmt->fetch();
 
 // 7. Auto-Registration for First-Time Users
 if (!$user) {
-    // If they don't exist in the database, register them instantly as a 'customer'
     $insert = $pdo->prepare("INSERT INTO telegram_users (telegram_id, role, current_mode, status) VALUES (:tid, 'customer', 'customer', 'active')");
     $insert->execute(['tid' => $telegram_id]);
     
@@ -52,16 +62,18 @@ if (!$user) {
         'id' => $pdo->lastInsertId(),
         'role' => 'customer',
         'current_mode' => 'customer',
-        'status' => 'active'
+        'status' => 'active',
+        'current_state' => null,
+        'phone' => null,
+        'latitude' => null,
+        'longitude' => null,
+        'commune_name' => null
     ];
 }
 
-// 8. Security Gate: Block suspended or banned users from interacting
+// 8. Security Gate
 if ($user['status'] !== 'active') {
-    $errorMsg = ($user['status'] === 'banned') 
-        ? "🚫 Votre compte a été banni définitivement de la plateforme." 
-        : "⚠️ Votre compte est temporairement suspendu.";
-        
+    $errorMsg = ($user['status'] === 'banned') ? "🚫 Votre compte a été banni." : "⚠️ Votre compte est suspendu.";
     sendTelegramMessage($chat_id, $errorMsg);
     exit;
 }
@@ -69,68 +81,49 @@ if ($user['status'] !== 'active') {
 // 8.5 INTERCEPT MODE SWITCHING
 if ($callback_query) {
     $data = $callback_query['data'];
-    
-    // If the user clicked a "Switch Mode" button
     if (in_array($data, ['switch_customer', 'switch_kitchen', 'switch_driver'])) {
         $new_mode = str_replace('switch_', '', $data);
         
-        // Security Check: Ensure they actually have the privilege to enter this mode
         if ($new_mode === 'kitchen' && $user['role'] !== 'restaurant') {
-            sendTelegramMessage($chat_id, "⚠️ Accès refusé : Vous n'êtes pas gérant de restaurant.");
-            exit;
+            sendTelegramMessage($chat_id, "⚠️ Accès refusé."); exit;
         }
         if ($new_mode === 'driver' && $user['role'] !== 'driver') {
-            sendTelegramMessage($chat_id, "⚠️ Accès refusé : Vous n'êtes pas livreur.");
-            exit;
+            sendTelegramMessage($chat_id, "⚠️ Accès refusé."); exit;
         }
 
-        // Update their active mode in the database
-        $stmt = $pdo->prepare("UPDATE telegram_users SET current_mode = :mode WHERE telegram_id = :tid");
+        $stmt = $pdo->prepare("UPDATE telegram_users SET current_mode = :mode, current_state = NULL WHERE telegram_id = :tid");
         $stmt->execute(['mode' => $new_mode, 'tid' => $telegram_id]);
         
-        // Notify the user
         $modeNames = ['customer' => 'Client', 'kitchen' => 'Cuisine', 'driver' => 'Livreur'];
         sendTelegramMessage($chat_id, "🔄 Interface changée vers : Mode <b>" . $modeNames[$new_mode] . "</b>.\nTapez /start pour ouvrir le nouveau menu.");
         exit;
     }
 }
 
-// 9. The Core Router: Delegate to the correct Class Handler
+// 9. The Core Router
 $activeMode = $user['current_mode'];
 
 switch ($activeMode) {
     case 'kitchen':
-        // Only restaurant owners looking at their dashboard
         $handler = new RestaurantHandler($pdo, $chat_id, $telegram_id);
         break;
-        
     case 'driver':
-        // Only delivery drivers looking at their logistics feed
         $handler = new DriverHandler($pdo, $chat_id, $telegram_id);
         break;
-        
     case 'customer':
     default:
-        // Regular food buyers (and the default state)
-        $handler = new CustomerHandler($pdo, $chat_id, $telegram_id, $user['role']);
+        $handler = new CustomerHandler($pdo, $chat_id, $telegram_id, $user['role'], $user);
         break;
 }
 
-// 10. Execute the specific logic for that user's role
 $handler->handle($update);
 
-/**
- * Basic fallback messenger to handle security alerts directly from the Webhook
- */
-function sendTelegramMessage($chat_id, $text) {
-    $botToken = "8935407487:AAFXdMAi_JjmtuqlyceCmK2ogfNxocNqjNY"; // Update with your actual token
+function sendTelegramMessage($chat_id, $text, $reply_markup = null) {
+    $botToken = "8935407487:AAFXdMAi_JjmtuqlyceCmK2ogfNxocNqjNY"; 
     $apiUrl = "https://api.telegram.org/bot" . $botToken . "/sendMessage";
     
-    $data = [
-        'chat_id' => $chat_id,
-        'text' => $text,
-        'parse_mode' => 'HTML'
-    ];
+    $data = ['chat_id' => $chat_id, 'text' => $text, 'parse_mode' => 'HTML'];
+    if ($reply_markup) $data['reply_markup'] = $reply_markup;
     
     $ch = curl_init($apiUrl);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);

@@ -1,12 +1,14 @@
 <?php
 
-class DriverHandler {
+class DriverHandler
+{
     private $pdo;
     private $chat_id;
     private $telegram_id;
     private $driver;
 
-    public function __construct($pdo, $chat_id, $telegram_id) {
+    public function __construct($pdo, $chat_id, $telegram_id)
+    {
         $this->pdo = $pdo;
         $this->chat_id = $chat_id;
         $this->telegram_id = $telegram_id;
@@ -16,8 +18,10 @@ class DriverHandler {
     /**
      * Secures the handler and loads the driver's profile
      */
-    private function verifyDriver() {
-        $sql = "SELECT dp.id, dp.verification_status, dp.is_online, dp.commune_name, dp.rating 
+    private function verifyDriver()
+    {
+        // AJOUT : dp.full_name, dp.phone dans le SELECT
+        $sql = "SELECT dp.id, dp.verification_status, dp.is_online, dp.commune_name, dp.rating, dp.full_name, dp.phone 
                 FROM driver_profiles dp
                 JOIN telegram_users tu ON dp.telegram_user_id = tu.id
                 WHERE tu.telegram_id = :tid LIMIT 1";
@@ -39,7 +43,8 @@ class DriverHandler {
         }
     }
 
-    public function handle($update) {
+    public function handle($update)
+    {
         $message = $update['message'] ?? null;
         $callback = $update['callback_query'] ?? null;
 
@@ -55,29 +60,22 @@ class DriverHandler {
 
             if ($data === 'dash') {
                 $this->showDashboard();
-                
             } elseif ($data === 'toggle_status') {
                 $this->toggleOnlineStatus();
-                
             } elseif ($data === 'view_pool') {
                 $this->showOpenDeliveries();
-                
             } elseif ($data === 'view_active') {
                 $this->showActiveDeliveries();
-                
             } elseif (strpos($data, 'view_ord_') === 0) {
                 $order_id = (int) str_replace('view_ord_', '', $data);
                 $this->showBiddingOptions($order_id);
-                
             } elseif (preg_match('/^bid_(\d+)_ord_(\d+)$/', $data, $matches)) {
                 $amount = (int) $matches[1];
                 $order_id = (int) $matches[2];
                 $this->submitBid($order_id, $amount);
-                
             } elseif (strpos($data, 'pickup_') === 0) {
                 $order_id = (int) str_replace('pickup_', '', $data);
                 $this->updateOrderStatus($order_id, 'OUT_FOR_DELIVERY', "🛵 Vous êtes en route ! Le client a été notifié.");
-                
             } elseif (strpos($data, 'deliver_') === 0) {
                 $order_id = (int) str_replace('deliver_', '', $data);
                 $this->updateOrderStatus($order_id, 'DELIVERED', "✅ Commande livrée avec succès ! Bon travail.");
@@ -86,7 +84,8 @@ class DriverHandler {
         }
     }
 
-    private function showDashboard() {
+    private function showDashboard()
+    {
         $statusText = $this->driver['is_online'] ? "🟢 <b>En Ligne</b> (Prêt à livrer)" : "🔴 <b>Hors Ligne</b>";
         $toggleBtnText = $this->driver['is_online'] ? "🛑 Passer Hors Ligne" : "🟢 Passer En Ligne";
 
@@ -112,23 +111,25 @@ class DriverHandler {
         $buttons = [
             [['text' => $toggleBtnText, 'callback_data' => 'toggle_status']],
             [['text' => "📡 Offres Disponibles ($openOrders)", 'callback_data' => 'view_pool']],
-            [['text' => "📦 Mes Livraisons en cours ($activeDeliveries)", 'callback_data' => 'view_active']],
-            [['text' => "🔄 Passer en mode Client", 'callback_data' => 'switch_customer']]
+            [['text' => "📦 Mes Livraisons en cours ($activeDeliveries)", 'callback_data' => 'view_active']]
+            // [['text' => "🔄 Passer en mode Client", 'callback_data' => 'switch_customer']]
         ];
 
         $this->sendMessage($this->chat_id, $text, json_encode(['inline_keyboard' => $buttons]));
     }
 
-    private function toggleOnlineStatus() {
+    private function toggleOnlineStatus()
+    {
         $newStatus = $this->driver['is_online'] ? 0 : 1;
         $stmt = $this->pdo->prepare("UPDATE driver_profiles SET is_online = :st WHERE id = :id");
         $stmt->execute(['st' => $newStatus, 'id' => $this->driver['id']]);
-        
+
         $this->driver['is_online'] = $newStatus;
         $this->showDashboard();
     }
 
-    private function showOpenDeliveries() {
+    private function showOpenDeliveries()
+    {
         if (!$this->driver['is_online']) {
             $this->sendMessage($this->chat_id, "⚠️ Vous devez être En Ligne pour voir les offres de livraison.");
             return;
@@ -144,13 +145,15 @@ class DriverHandler {
                     SELECT 1 FROM delivery_bids b WHERE b.order_id = o.id AND b.driver_id = :did
                 )
                 ORDER BY o.creationDate DESC LIMIT 10";
-                
+
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute(['commune' => $this->driver['commune_name'], 'did' => $this->driver['id']]);
         $orders = $stmt->fetchAll();
 
         if (count($orders) === 0) {
-            $this->sendMessage($this->chat_id, "Aucune nouvelle livraison disponible dans votre zone pour le moment.", 
+            $this->sendMessage(
+                $this->chat_id,
+                "Aucune nouvelle livraison disponible dans votre zone pour le moment.",
                 json_encode(['inline_keyboard' => [[['text' => "🔙 Retour", 'callback_data' => 'dash']]]])
             );
             return;
@@ -167,8 +170,9 @@ class DriverHandler {
         $this->sendMessage($this->chat_id, "📡 <b>Livraisons Ouvertes (" . $this->driver['commune_name'] . ")</b>\nSélectionnez une commande pour proposer un tarif :", json_encode(['inline_keyboard' => $buttons]));
     }
 
-    private function showBiddingOptions($order_id) {
-        // Mapped to `ordere` and `company`
+    private function showBiddingOptions($order_id)
+    {
+        // On retire 'o.comment' de la requête, car on ne veut plus l'afficher à ce stade
         $stmt = $this->pdo->prepare("SELECT o.code AS order_code, o.totalTtc AS food_subtotal, o.delivery_lat, o.delivery_lon, o.delivery_address_note, c.companyName AS name, c.address 
                                      FROM ordere o JOIN company c ON o.company_id = c.id 
                                      WHERE o.id = :oid LIMIT 1");
@@ -180,13 +184,16 @@ class DriverHandler {
         $text = "📦 <b>Commande " . $order['order_code'] . "</b>\n";
         $text .= "🏪 Restaurant : " . $order['name'] . "\n";
         $text .= "📍 Départ : " . $order['address'] . "\n";
-        
+
+        // Affichage de la position / adresse uniquement
         $text .= "🚩 <b>Destination :</b> ";
         if (!empty($order['delivery_lat']) && !empty($order['delivery_lon'])) {
             $mapsLink = "https://www.google.com/maps?q={$order['delivery_lat']},{$order['delivery_lon']}";
             $text .= "<a href='{$mapsLink}'>Position GPS Client</a>\n";
         } elseif (!empty($order['delivery_address_note'])) {
-            $text .= $order['delivery_address_note'] . "\n";
+            $text .= htmlspecialchars($order['delivery_address_note']) . "\n";
+        } else {
+            $text .= "Non spécifiée\n";
         }
 
         $text .= "🍔 Total nourriture : " . $order['food_subtotal'] . " DA\n\n";
@@ -207,7 +214,8 @@ class DriverHandler {
         $this->sendMessage($this->chat_id, $text, json_encode(['inline_keyboard' => $buttons]));
     }
 
-    private function submitBid($order_id, $amount) {
+    private function submitBid($order_id, $amount)
+    {
         $stmt = $this->pdo->prepare("SELECT progression AS status FROM ordere WHERE id = :oid LIMIT 1");
         $stmt->execute(['oid' => $order_id]);
         $order = $stmt->fetch();
@@ -224,14 +232,38 @@ class DriverHandler {
             'did' => $this->driver['id'],
             'amount' => $amount
         ]);
+        $bid_id = $this->pdo->lastInsertId();
 
-        $this->sendMessage($this->chat_id, "✅ Offre de <b>$amount DA</b> envoyée ! Vous serez notifié si le client accepte votre tarif.");
+        $this->sendMessage($this->chat_id, "✅ Offre de <b>$amount DA</b> envoyée ! Vous serez notifié si le restaurant accepte votre tarif.");
         $this->showDashboard();
+
+        // --- NOUVEAU : Notifier le restaurant de cette offre ---
+        $stmtRest = $this->pdo->prepare("SELECT tu.telegram_id, o.code 
+                                         FROM ordere o 
+                                         JOIN telegram_users tu ON o.company_id = tu.company_id 
+                                         WHERE o.id = :oid AND tu.role = 'restaurant' LIMIT 1");
+        $stmtRest->execute(['oid' => $order_id]);
+        $rest = $stmtRest->fetch();
+
+        if ($rest) {
+            $msg = "🛵 <b>Nouvelle Offre de Livraison !</b>\n";
+            $msg .= "Commande : <b>" . $rest['code'] . "</b>\n";
+            $msg .= "Livreur : <b>" . $this->driver['full_name'] . "</b> (⭐ " . $this->driver['rating'] . ")\n";
+            $msg .= "📱 Tél : <b>" . $this->driver['phone'] . "</b>\n"; // <-- AJOUT DU NUMÉRO ICI
+            $msg .= "Tarif proposé : <b>$amount DA</b>\n";
+
+            $buttons = [
+                [['text' => "✅ Accepter cette offre ($amount DA)", 'callback_data' => "accept_bid_" . $bid_id]]
+            ];
+            $this->sendMessage($rest['telegram_id'], $msg, json_encode(['inline_keyboard' => $buttons]));
+        }
     }
 
-    private function showActiveDeliveries() {
-        // Mapped to `ordere`, `company`, `progression` and `driver_profile_id`
-        $sql = "SELECT o.id, o.code AS order_code, o.progression AS status, c.companyName AS rest_name, o.totalTtc AS total_amount 
+    private function showActiveDeliveries()
+    {
+        // Ajout de o.delivery_fee dans le SELECT
+        $sql = "SELECT o.id, o.code AS order_code, o.progression AS status, c.companyName AS rest_name, o.totalTtc AS total_amount, o.delivery_fee,
+                       o.delivery_lat, o.delivery_lon, o.delivery_address_note, o.comment
                 FROM ordere o 
                 JOIN company c ON o.company_id = c.id 
                 WHERE o.driver_profile_id = :did AND o.progression IN ('BID_SELECTED', 'FOOD_READY', 'OUT_FOR_DELIVERY')
@@ -246,10 +278,31 @@ class DriverHandler {
         }
 
         foreach ($activeOrders as $o) {
+            // Calcul du total global
+            $total_to_pay = $o['total_amount'] + $o['delivery_fee'];
+
             $text = "📦 <b>Commande " . $o['order_code'] . "</b>\n";
-            $text .= "🏪 " . $o['rest_name'] . "\n";
-            $text .= "💰 À encaisser : <b>" . $o['total_amount'] . " DA</b>\n";
-            
+            $text .= "🏪 Restaurant : " . $o['rest_name'] . "\n";
+            $text .= "🍔 Repas : " . $o['total_amount'] . " DA\n";
+            $text .= "🛵 Livraison : " . $o['delivery_fee'] . " DA\n";
+            $text .= "💰 <b>À encaisser : " . $total_to_pay . " DA</b>\n";
+            $text .= "━━━━━━━━━━━━━━━━━\n";
+
+            if (!empty($o['comment'])) {
+                $text .= "📱 <b>Contact :</b> " . htmlspecialchars($o['comment']) . "\n";
+            }
+
+            $text .= "📍 <b>Destination :</b> ";
+            if (!empty($o['delivery_lat']) && !empty($o['delivery_lon'])) {
+                $mapsLink = "https://www.google.com/maps?q={$o['delivery_lat']},{$o['delivery_lon']}";
+                $text .= "<a href='{$mapsLink}'>Position GPS du Client</a>\n";
+            } elseif (!empty($o['delivery_address_note'])) {
+                $text .= htmlspecialchars($o['delivery_address_note']) . "\n";
+            } else {
+                $text .= "Non spécifiée\n";
+            }
+            $text .= "━━━━━━━━━━━━━━━━━\n";
+
             $buttons = [];
             if ($o['status'] === 'BID_SELECTED') {
                 $text .= "⏳ <i>En attente que le restaurant prépare la commande...</i>";
@@ -264,11 +317,18 @@ class DriverHandler {
             $keyboard = !empty($buttons) ? json_encode(['inline_keyboard' => $buttons]) : null;
             $this->sendMessage($this->chat_id, $text, $keyboard);
         }
-        
+
         $this->sendMessage($this->chat_id, "Gérez vos livraisons ci-dessus ☝️", json_encode(['inline_keyboard' => [[['text' => "🔙 Retour", 'callback_data' => 'dash']]]]));
     }
 
-    private function updateOrderStatus($order_id, $new_status, $message) {
+    private function updateOrderStatus($order_id, $new_status, $message)
+    {
+        // 1. Récupérer le Telegram ID du client
+        $stmtCust = $this->pdo->prepare("SELECT code, customer_telegram_id FROM ordere WHERE id = :oid");
+        $stmtCust->execute(['oid' => $order_id]);
+        $orderData = $stmtCust->fetch();
+
+        // 2. Mettre à jour la commande
         $sql = "UPDATE ordere SET progression = :status, updateDate = NOW() ";
         if ($new_status === 'DELIVERED') {
             $sql .= ", delivered_at = NOW() ";
@@ -282,14 +342,29 @@ class DriverHandler {
             'did' => $this->driver['id']
         ]);
 
+        // 3. Confirmer au Livreur
         $this->sendMessage($this->chat_id, $message);
+
+        // 4. Notifier le Client de l'avancée de la livraison
+        if ($orderData && !empty($orderData['customer_telegram_id'])) {
+            $custId = $orderData['customer_telegram_id'];
+            $code = $orderData['code'];
+
+            if ($new_status === 'OUT_FOR_DELIVERY') {
+                $this->sendMessage($custId, "🛵 <b>En route !</b>\nLe livreur vient de récupérer votre commande <b>$code</b>. Il est en route vers votre position !");
+            } elseif ($new_status === 'DELIVERED') {
+                $this->sendMessage($custId, "🎉 <b>Commande Livrée !</b>\nVotre commande <b>$code</b> a été livrée avec succès. Bon appétit et merci d'avoir choisi DZ FOOD DELIVERY !");
+            }
+        }
+
         $this->showActiveDeliveries();
     }
 
-    private function sendMessage($chat_id, $text, $reply_markup = null) {
-        $botToken = "8935407487:AAFXdMAi_JjmtuqlyceCmK2ogfNxocNqjNY"; 
+    private function sendMessage($chat_id, $text, $reply_markup = null)
+    {
+        $botToken = "8935407487:AAFXdMAi_JjmtuqlyceCmK2ogfNxocNqjNY";
         $apiUrl = "https://api.telegram.org/bot" . $botToken . "/sendMessage";
-        
+
         $data = [
             'chat_id' => $chat_id,
             'text' => $text,
@@ -298,7 +373,7 @@ class DriverHandler {
         if ($reply_markup) {
             $data['reply_markup'] = $reply_markup;
         }
-        
+
         $ch = curl_init($apiUrl);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
@@ -307,4 +382,3 @@ class DriverHandler {
         curl_close($ch);
     }
 }
-?>

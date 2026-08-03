@@ -109,6 +109,17 @@ if ($callback_query) {
 // 8.6 INTERCEPT MODE SWITCHING VIA TEXT COMMANDS (Left Menu)
 $text = $message['text'] ?? '';
 
+// ---> AJOUTER CE BLOC ICI <---
+if ($text === '/mon_code') {
+    $msg = "🆔 <b>Votre Code Unique (ID) :</b>\n";
+    $msg .= "<code>" . $telegram_id . "</code>\n\n";
+    $msg .= "<i>💡 Appuyez sur le code pour le copier rapidement. Transmettez-le à l'administration ou à votre partenaire.</i>";
+    
+    sendTelegramMessage($chat_id, $msg);
+    exit; // On arrête l'exécution ici, pas besoin de charger les Handlers
+}
+// ---> FIN DU BLOC <---
+
 if (in_array($text, ['/client', '/cuisine', '/livreur'])) {
     $new_mode = '';
     if ($text === '/client') $new_mode = 'customer';

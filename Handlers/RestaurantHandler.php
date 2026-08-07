@@ -2,11 +2,14 @@
 
 class RestaurantHandler
 {
+    use TelegramSenderTrait;
+
     private $pdo;
     private $chat_id;
     private $telegram_id;
     private $company_id;
-    private $current_state; // <-- AJOUTER CECI
+    private $current_state;
+    private $is_manager; // <-- NOUVELLE VARIABLE
 
     public function __construct($pdo, $chat_id, $telegram_id)
     {
@@ -21,8 +24,8 @@ class RestaurantHandler
      */
     private function verifyRestaurantOwner()
     {
-        // <-- MODIFIER LA REQUÊTE POUR RÉCUPÉRER current_state
-        $stmt = $this->pdo->prepare("SELECT company_id, current_state FROM telegram_users WHERE telegram_id = :tid LIMIT 1");
+        // <-- AJOUT DE is_manager DANS LE SELECT
+        $stmt = $this->pdo->prepare("SELECT company_id, current_state, is_manager FROM telegram_users WHERE telegram_id = :tid LIMIT 1");
         $stmt->execute(['tid' => $this->telegram_id]);
         $user = $stmt->fetch();
 
@@ -31,7 +34,8 @@ class RestaurantHandler
             exit;
         }
         $this->company_id = $user['company_id'];
-        $this->current_state = $user['current_state']; // <-- AJOUTER CECI
+        $this->current_state = $user['current_state'];
+        $this->is_manager = (int)$user['is_manager']; // <-- SAUVEGARDE DE LA PERMISSION
     }
 
     public function handle($update)
@@ -39,20 +43,34 @@ class RestaurantHandler
         $message = $update['message'] ?? null;
         $callback = $update['callback_query'] ?? null;
 
+
         // 1. Handle Text Commands & States
-        if ($message && isset($message['text'])) {
-            $text = trim($message['text']);
-            
-            if ($text === '/start' || $text === '/dashboard') {
-                $this->clearState(); // Toujours vider l'état au retour au menu
-                $this->showDashboard();
-                return;
+        if ($message) {
+            // ---> ON EFFACE LE MESSAGE DU RESTAURATEUR ICI <---
+            if (isset($message['message_id'])) {
+                $this->deleteUserMessage($message['message_id']);
             }
 
-            // <-- AJOUT : Intercepter le numéro de téléphone saisi
-            if ($this->current_state === 'AWAITING_DRIVER_ID') {
-                $this->processAddDriver($text);
-                return;
+            // Ensuite, on traite la commande ou le texte saisi
+            if (isset($message['text'])) {
+                $text = trim($message['text']);
+
+                if ($text === '/start' || $text === '/dashboard') {
+                    $this->clearState(); // Toujours vider l'état au retour au menu
+                    $this->showDashboard();
+                    return;
+                }
+
+                // Intercepter le numéro de téléphone saisi
+                if ($this->current_state === 'AWAITING_DRIVER_ID') {
+                    $this->processAddDriver($text);
+                    return;
+                }
+                // <-- NOUVEAU : Intercepter le code de l'assistant
+                if ($this->current_state === 'AWAITING_ASSISTANT_ID') {
+                    $this->processAddAssistant($text);
+                    return;
+                }
             }
             return;
         }
@@ -60,68 +78,73 @@ class RestaurantHandler
         // 2. Handle Interactive Button Clicks
         if ($callback) {
             $data = $callback['data'];
-            
-            // <-- AJOUT : Vider l'état si l'utilisateur clique sur n'importe quel bouton
-            if ($this->current_state === 'AWAITING_DRIVER_ID') {
+
+            // On vide l'état si l'utilisateur annule en cliquant ailleurs
+            if ($this->current_state === 'AWAITING_DRIVER_ID' || $this->current_state === 'AWAITING_ASSISTANT_ID') {
                 $this->clearState();
             }
 
             if ($data === 'dash') {
                 $this->showDashboard();
-                
-            // <-- AJOUT : Boutons de gestion des livreurs
             } elseif ($data === 'manage_drivers') {
+                // <-- BLOCAGE SÉCURITÉ
+                if ($this->is_manager !== 1) return $this->sendMessage($this->chat_id, "⛔ Accès refusé. Seul le gérant peut modifier la liste des livreurs.");
                 $this->showDriverManagement();
-
             } elseif ($data === 'add_driver') {
+                if ($this->is_manager !== 1) return; // <-- BLOCAGE
                 $this->askForDriverId();
-
             } elseif (strpos($data, 'remove_driver_') === 0) {
+                if ($this->is_manager !== 1) return; // <-- BLOCAGE
                 $driver_profile_id = (int) str_replace('remove_driver_', '', $data);
                 $this->removeDriver($driver_profile_id);
-            // <-- FIN DES AJOUTS
-            
-            } elseif ($data === 'view_pending') {
-                $this->listOrders('PENDING_RESTAURANT', "Nouvelles commandes en attente");
 
+                // --- GESTION DES ASSISTANTS ---
+            } elseif ($data === 'manage_assistants') {
+                if ($this->is_manager !== 1) return $this->sendMessage($this->chat_id, "⛔ Accès refusé.");
+                $this->showAssistantManagement();
+
+            } elseif ($data === 'add_assistant') {
+                if ($this->is_manager !== 1) return;
+                $this->askForAssistantId();
+
+            } elseif (strpos($data, 'remove_assistant_') === 0) {
+                if ($this->is_manager !== 1) return;
+                $ast_id = (int) str_replace('remove_assistant_', '', $data);
+                $this->removeAssistant($ast_id);
+
+            } elseif ($data === 'view_pending') {
+                // ... le reste du code continue normalement ...
+                $this->listOrders('PENDING_RESTAURANT', "Nouvelles commandes en attente");
             } elseif ($data === 'view_active') {
                 // Shows orders currently being cooked or waiting for drivers
                 $this->listOrders("IN('ACCEPTED', 'AWAITING_BID', 'BID_SELECTED')", "Commandes en cours");
-
             } elseif (strpos($data, 'ord_') === 0) {
                 // View specific order details: "ord_532"
                 $order_id = (int) str_replace('ord_', '', $data);
                 $this->showOrderDetails($order_id);
-
             } elseif (strpos($data, 'my_drivers_') === 0) {
                 // Afficher la liste des livreurs du resto pour cette commande
                 $order_id = (int) str_replace('my_drivers_', '', $data);
                 $this->showMyDrivers($order_id);
-
             } elseif (preg_match('/^assign_(\d+)_ord_(\d+)$/', $data, $matches)) {
                 // Au lieu d'assigner directement, on demande le tarif de livraison
                 $this->askDirectDriverFee((int)$matches[2], (int)$matches[1]);
-
             } elseif (preg_match('/^confirm_assign_(\d+)_fee_(\d+)_ord_(\d+)$/', $data, $matches)) {
                 // Assigner directement la commande au livreur avec le tarif choisi
                 // $matches[1] = driver_id, $matches[2] = fee, $matches[3] = order_id
                 $this->assignDirectDriver((int)$matches[3], (int)$matches[1], (int)$matches[2]);
-
             } elseif (strpos($data, 'accept_bid_') === 0) {
                 // Le restaurant accepte l'offre d'un livreur du pool public
                 $bid_id = (int) str_replace('accept_bid_', '', $data);
                 $this->acceptDriverBid($bid_id);
-
             } elseif (strpos($data, 'accept_') === 0) {
                 // Accept order and push to driver pool: "accept_532"
                 $order_id = (int) str_replace('accept_', '', $data);
                 $this->updateOrderStatus($order_id, 'AWAITING_BID', "✅ Commande acceptée ! Elle a été envoyée aux livreurs de la ville.");
-
             } elseif (strpos($data, 'ready_') === 0) {
                 // Mark food as ready for pickup: "ready_532"
                 $order_id = (int) str_replace('ready_', '', $data);
                 $this->updateOrderStatus($order_id, 'FOOD_READY', "🛎️ Commande marquée comme prête ! Le livreur a été notifié.");
-
             } elseif (strpos($data, 'cancel_') === 0) {
                 // Kitchen rejects the order: "cancel_532"
                 $order_id = (int) str_replace('cancel_', '', $data);
@@ -158,10 +181,14 @@ class RestaurantHandler
 
         $buttons = [
             [['text' => "🔴 Nouvelles Commandes ($pendingCount)", 'callback_data' => 'view_pending']],
-            [['text' => "🟠 En Préparation ($activeCount)", 'callback_data' => 'view_active']],
-            [['text' => "🛵 Gérer mes livreurs", 'callback_data' => 'manage_drivers']] // <-- NOUVEAU BOUTON
-            // [['text' => "🔄 Passer en mode Client", 'callback_data' => 'switch_customer']]
+            [['text' => "🟠 En Préparation ($activeCount)", 'callback_data' => 'view_active']]
         ];
+
+        // <-- CONDITION : Seul le patron voit ce bouton
+        if ($this->is_manager === 1) {
+            $buttons[] = [['text' => "👥 Gérer mes assistants", 'callback_data' => 'manage_assistants']];
+            $buttons[] = [['text' => "🛵 Gérer mes livreurs", 'callback_data' => 'manage_drivers']];
+        }
 
         $this->sendMessage($this->chat_id, $text, json_encode(['inline_keyboard' => $buttons]));
     }
@@ -268,10 +295,10 @@ class RestaurantHandler
         $this->sendMessage($this->chat_id, $text, json_encode(['inline_keyboard' => $buttons]));
     }
 
-   private function updateOrderStatus($order_id, $new_status, $successMessage)
+    private function updateOrderStatus($order_id, $new_status, $successMessage)
     {
         // 1. Récupérer le Telegram ID du client, du livreur, le nom ET la commune du restaurant
-        $sqlInfo = "SELECT o.code, o.customer_telegram_id, tu.telegram_id as driver_telegram_id, c.companyName as rest_name, c.commune_name as rest_commune
+        $sqlInfo = "SELECT o.code, o.customer_telegram_id, tu.telegram_id as driver_telegram_id, c.companyName as rest_name, c.commune_name as rest_commune, c.phone as rest_phone
                     FROM ordere o 
                     LEFT JOIN driver_profiles dp ON o.driver_profile_id = dp.id
                     LEFT JOIN telegram_users tu ON dp.telegram_user_id = tu.id
@@ -305,12 +332,20 @@ class RestaurantHandler
         if ($orderData) {
             $code = $orderData['code'];
             $restName = htmlspecialchars($orderData['rest_name']);
+            $restPhone = htmlspecialchars($orderData['rest_phone']); // <-- AJOUT
 
             // --- Notification au CLIENT ---
             if (!empty($orderData['customer_telegram_id'])) {
                 $custId = $orderData['customer_telegram_id'];
+                
                 if ($new_status === 'AWAITING_BID') {
-                    $this->sendMessage($custId, "✅ <b>Commande Acceptée !</b>\nVotre commande <b>$code</b> est en cours de préparation. Nous recherchons actuellement un livreur disponible dans votre ville 🛵.");
+                    // ---> Message mis à jour <---
+                    $msgClient = "✅ <b>Commande Acceptée !</b>\n";
+                    $msgClient .= "Le restaurant <b>$restName</b> (📞 <b>$restPhone</b>) a commencé la préparation de votre commande <b>$code</b>.\n";
+                    $msgClient .= "Nous recherchons actuellement un livreur disponible dans votre ville 🛵.";
+                    
+                    $this->sendMessage($custId, $msgClient);
+                    
                 } elseif ($new_status === 'FOOD_READY') {
                     $this->sendMessage($custId, "🛎️ <b>C'est prêt !</b>\nVotre commande <b>$code</b> est prête au restaurant. Le livreur va la récupérer d'une minute à l'autre !");
                 } elseif ($new_status === 'CANCELLED') {
@@ -321,7 +356,7 @@ class RestaurantHandler
             // --- BROADCAST AUX LIVREURS DE LA VILLE (Système d'enchères) ---
             if ($new_status === 'AWAITING_BID') {
                 $restCommune = $orderData['rest_commune'];
-                
+
                 // Requête ciblée : En ligne + Même ville + (Public OU Livreur de ce resto)
                 $sqlDrivers = "SELECT tu.telegram_id 
                                FROM driver_profiles dp 
@@ -335,18 +370,18 @@ class RestaurantHandler
                     'commune' => $restCommune,
                     'cid' => $this->company_id
                 ]);
-                
+
                 $availableDrivers = $stmtDrivers->fetchAll();
-                
+
                 // Préparation du message d'alerte avec un bouton de raccourci
                 $broadcastMsg = "📡 <b>Nouvelle Course Disponible !</b>\n";
                 $broadcastMsg .= "La commande (<b>$code</b>) est en attente pour le restaurant <b>$restName</b> ($restCommune).\n\n";
                 $broadcastMsg .= "Soyez le premier à proposer votre tarif !";
-                
+
                 $driverButtons = json_encode(['inline_keyboard' => [
                     [['text' => "📡 Voir les Offres", 'callback_data' => 'view_pool']]
                 ]]);
-                
+
                 // Envoi de la notification à chaque livreur concerné
                 foreach ($availableDrivers as $d) {
                     $this->sendMessage($d['telegram_id'], $broadcastMsg, $driverButtons);
@@ -356,15 +391,15 @@ class RestaurantHandler
             // --- Notification au LIVREUR ASSIGNÉ (Quand c'est prêt à récupérer) ---
             if ($new_status === 'FOOD_READY' && !empty($orderData['driver_telegram_id'])) {
                 $driverId = $orderData['driver_telegram_id'];
-                
+
                 $msg = "🛎️ <b>Commande PRÊTE !</b>\n";
                 $msg .= "La commande <b>$code</b> est prête au restaurant <b>$restName</b>.\n";
                 $msg .= "Vous pouvez aller la récupérer ! 🛵";
-                
+
                 $buttons = [
                     [['text' => "🛵 J'ai récupéré la commande", 'callback_data' => "pickup_" . $order_id]]
                 ];
-                
+
                 $this->sendMessage($driverId, $msg, json_encode(['inline_keyboard' => $buttons]));
             }
         }
@@ -426,15 +461,16 @@ class RestaurantHandler
         $this->sendMessage($this->chat_id, $text, json_encode(['inline_keyboard' => $buttons]));
     }
 
-    private function acceptDriverBid($bid_id) {
+    private function acceptDriverBid($bid_id)
+    {
         // 1. Récupérer les détails de l'offre et de la commande
-        $sql = "SELECT b.order_id, b.driver_id, b.bid_amount, o.progression, o.code, o.customer_telegram_id, tu.telegram_id as driver_telegram_id, dp.full_name as driver_name
+        $sql = "SELECT b.order_id, b.driver_id, b.bid_amount, o.progression, o.code, o.customer_telegram_id, tu.telegram_id as driver_telegram_id, dp.full_name as driver_name, dp.phone as driver_phone
                 FROM delivery_bids b
                 JOIN ordere o ON b.order_id = o.id
                 JOIN driver_profiles dp ON b.driver_id = dp.id
                 JOIN telegram_users tu ON dp.telegram_user_id = tu.id
                 WHERE b.id = :bid AND o.company_id = :cid LIMIT 1";
-        
+
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute(['bid' => $bid_id, 'cid' => $this->company_id]);
         $bid = $stmt->fetch();
@@ -479,10 +515,11 @@ class RestaurantHandler
         $msgDriver .= "Allez dans '📦 Mes Livraisons' pour suivre la course.";
         $this->sendMessage($bid['driver_telegram_id'], $msgDriver);
 
-        // 6. Notifier le Client
+        // 6. Notifier le Client (Message mis à jour)
         if (!empty($bid['customer_telegram_id'])) {
             $msgCust = "✅ <b>Livreur trouvé !</b>\n";
             $msgCust .= "Le livreur <b>{$bid['driver_name']}</b> a été assigné à votre commande <b>{$bid['code']}</b>.\n";
+            $msgCust .= "📱 Tél Livreur : <b>{$bid['driver_phone']}</b>\n"; // <-- AJOUT
             $msgCust .= "🛵 Frais de livraison : <b>$fee DA</b>\n";
             $msgCust .= "👨‍🍳 Votre repas est actuellement en cours de préparation !";
             $this->sendMessage($bid['customer_telegram_id'], $msgCust);
@@ -513,7 +550,7 @@ class RestaurantHandler
         $this->showDashboard();
 
         // 2. Récupérer les infos pour notifier le Livreur ET le Client
-        $stmt = $this->pdo->prepare("SELECT tu.telegram_id as driver_tid, o.code, o.customer_telegram_id 
+        $stmt = $this->pdo->prepare("SELECT tu.telegram_id as driver_tid, o.code, o.customer_telegram_id, dp.full_name, dp.phone 
                                      FROM driver_profiles dp 
                                      JOIN telegram_users tu ON dp.telegram_user_id = tu.id 
                                      JOIN ordere o ON o.id = :oid 
@@ -525,8 +562,10 @@ class RestaurantHandler
             $this->sendMessage($data['driver_tid'], "🚨 <b>Nouvelle Livraison Assignée !</b>\nVotre restaurant vous a assigné la commande <b>" . $data['code'] . "</b>.\n\nAllez dans '📦 Mes Livraisons en cours' pour voir les détails.");
 
             if (!empty($data['customer_telegram_id'])) {
+                // ---> Message mis à jour <---
                 $msg = "✅ <b>Bonne nouvelle !</b>\nVotre commande <b>" . $data['code'] . "</b> a été acceptée.\n";
-                $msg .= "Un livreur du restaurant a été assigné.\n\n";
+                $msg .= "Le livreur <b>{$data['full_name']}</b> a été assigné.\n";
+                $msg .= "📱 Tél Livreur : <b>{$data['phone']}</b>\n\n"; // <-- AJOUT
                 $msg .= "🛵 Frais de livraison : <b>{$fee} DA</b>\n";
                 $msg .= "👨‍🍳 Votre repas est en cours de préparation !";
                 $this->sendMessage($data['customer_telegram_id'], $msg);
@@ -536,13 +575,15 @@ class RestaurantHandler
 
     // --- GESTION DES LIVREURS DU RESTAURANT ---
 
-    private function clearState() {
+    private function clearState()
+    {
         $stmt = $this->pdo->prepare("UPDATE telegram_users SET current_state = NULL WHERE telegram_id = :tid");
         $stmt->execute(['tid' => $this->telegram_id]);
         $this->current_state = null;
     }
 
-    private function showDriverManagement() {
+    private function showDriverManagement()
+    {
         $sql = "SELECT dp.id as driver_id, dp.full_name, dp.phone 
                 FROM driver_profiles dp 
                 JOIN telegram_users tu ON dp.telegram_user_id = tu.id 
@@ -552,7 +593,7 @@ class RestaurantHandler
         $drivers = $stmt->fetchAll();
 
         $text = "🛵 <b>Gestion de vos livreurs exclusifs</b>\n\n";
-        
+
         $buttons = [];
         if (count($drivers) === 0) {
             $text .= "<i>Vous n'avez aucun livreur exclusif pour le moment.</i>";
@@ -569,10 +610,11 @@ class RestaurantHandler
         $this->sendMessage($this->chat_id, $text, json_encode(['inline_keyboard' => $buttons]));
     }
 
-    private function askForDriverId() { // Tu peux renommer cette fonction askForDriverId() si tu veux
+    private function askForDriverId()
+    { // Tu peux renommer cette fonction askForDriverId() si tu veux
         $stmt = $this->pdo->prepare("UPDATE telegram_users SET current_state = 'AWAITING_DRIVER_ID' WHERE telegram_id = :tid");
         $stmt->execute(['tid' => $this->telegram_id]);
-        
+
         $text = "➕ <b>Ajouter un livreur</b>\n\n";
         $text .= "Demandez à votre livreur de vous fournir son <b>Code Livreur</b> (disponible sur son MENU /mon_code).\n\n";
         $text .= "✏️ <b>Veuillez taper et envoyer le Code Livreur (ex: 8612659606) :</b>";
@@ -581,7 +623,8 @@ class RestaurantHandler
         $this->sendMessage($this->chat_id, $text, json_encode(['inline_keyboard' => $buttons]));
     }
 
-    private function processAddDriver($driver_code) {
+    private function processAddDriver($driver_code)
+    {
         // Nettoyer l'entrée (au cas où il y a des espaces)
         $driver_telegram_id = trim($driver_code);
 
@@ -590,7 +633,7 @@ class RestaurantHandler
                 FROM driver_profiles dp 
                 JOIN telegram_users tu ON dp.telegram_user_id = tu.id 
                 WHERE tu.telegram_id = :dtid AND tu.role = 'driver' LIMIT 1";
-        
+
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute(['dtid' => $driver_telegram_id]);
         $driver = $stmt->fetch();
@@ -598,14 +641,20 @@ class RestaurantHandler
         $this->clearState();
 
         if (!$driver) {
-            $this->sendMessage($this->chat_id, "❌ Impossible de trouver un livreur avec le code <b>$driver_telegram_id</b>.\nVérifiez qu'il vous a donné le bon code.", 
-                json_encode(['inline_keyboard' => [[['text' => "🔙 Retour", 'callback_data' => 'manage_drivers']]]]));
+            $this->sendMessage(
+                $this->chat_id,
+                "❌ Impossible de trouver un livreur avec le code <b>$driver_telegram_id</b>.\nVérifiez qu'il vous a donné le bon code.",
+                json_encode(['inline_keyboard' => [[['text' => "🔙 Retour", 'callback_data' => 'manage_drivers']]]])
+            );
             return;
         }
 
         if ($driver['verification_status'] !== 'approved') {
-            $this->sendMessage($this->chat_id, "⚠️ Le profil de <b>" . $driver['full_name'] . "</b> n'a pas encore été approuvé par l'administration.",
-                json_encode(['inline_keyboard' => [[['text' => "🔙 Retour", 'callback_data' => 'manage_drivers']]]]));
+            $this->sendMessage(
+                $this->chat_id,
+                "⚠️ Le profil de <b>" . $driver['full_name'] . "</b> n'a pas encore été approuvé par l'administration.",
+                json_encode(['inline_keyboard' => [[['text' => "🔙 Retour", 'callback_data' => 'manage_drivers']]]])
+            );
             return;
         }
 
@@ -620,7 +669,8 @@ class RestaurantHandler
         $this->showDriverManagement();
     }
 
-    private function removeDriver($driver_profile_id) {
+    private function removeDriver($driver_profile_id)
+    {
         $stmt = $this->pdo->prepare("SELECT tu.id as tu_id, dp.full_name, tu.telegram_id FROM driver_profiles dp JOIN telegram_users tu ON dp.telegram_user_id = tu.id WHERE dp.id = :did LIMIT 1");
         $stmt->execute(['did' => $driver_profile_id]);
         $driver = $stmt->fetch();
@@ -636,26 +686,117 @@ class RestaurantHandler
 
         $this->showDriverManagement();
     }
-    
-    private function sendMessage($chat_id, $text, $reply_markup = null)
-    {
-        $botToken = "8935407487:AAFXdMAi_JjmtuqlyceCmK2ogfNxocNqjNY";
-        $apiUrl = "https://api.telegram.org/bot" . $botToken . "/sendMessage";
 
-        $data = [
-            'chat_id' => $chat_id,
-            'text' => $text,
-            'parse_mode' => 'HTML'
-        ];
-        if ($reply_markup) {
-            $data['reply_markup'] = $reply_markup;
+    // --- GESTION DES ASSISTANTS DU RESTAURANT ---
+
+    private function showAssistantManagement() {
+        // On cherche les utilisateurs liés à ce restaurant qui sont "restaurant" mais pas "manager"
+        $sql = "SELECT id, telegram_id, phone FROM telegram_users 
+                WHERE company_id = :cid AND role = 'restaurant' AND is_manager = 0";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute(['cid' => $this->company_id]);
+        $assistants = $stmt->fetchAll();
+
+        $text = "👥 <b>Gestion de vos assistants</b>\n\n";
+        $buttons = [];
+        
+        if (count($assistants) === 0) {
+            $text .= "<i>Vous n'avez aucun assistant pour le moment.</i>";
+        } else {
+            $text .= "Voici la liste de vos assistants. Cliquez sur ❌ pour les retirer.\n";
+            foreach ($assistants as $a) {
+                // On affiche le téléphone s'il est dispo, sinon l'ID Telegram
+                $label = !empty($a['phone']) ? "Tél: " . $a['phone'] : "ID: " . $a['telegram_id'];
+                $buttons[] = [['text' => "❌ Retirer : " . $label, 'callback_data' => "remove_assistant_" . $a['id']]];
+            }
         }
 
-        $ch = curl_init($apiUrl);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
-        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-        curl_exec($ch);
-        curl_close($ch);
+        $buttons[] = [['text' => "➕ Ajouter un assistant", 'callback_data' => 'add_assistant']];
+        $buttons[] = [['text' => "🔙 Retour au Dashboard", 'callback_data' => 'dash']];
+
+        $this->sendMessage($this->chat_id, $text, json_encode(['inline_keyboard' => $buttons]));
+    }
+
+    private function askForAssistantId() {
+        $stmt = $this->pdo->prepare("UPDATE telegram_users SET current_state = 'AWAITING_ASSISTANT_ID' WHERE telegram_id = :tid");
+        $stmt->execute(['tid' => $this->telegram_id]);
+        
+        $text = "➕ <b>Ajouter un assistant</b>\n\n";
+        $text .= "Demandez à votre assistant de vous fournir son <b>Code Unique</b> (disponible sur son menu /mon_code).\n\n";
+        $text .= "✏️ <b>Veuillez taper et envoyer le Code (ex: 8612659606) :</b>";
+
+        $buttons = [[['text' => "🔙 Annuler", 'callback_data' => 'manage_assistants']]];
+        $this->sendMessage($this->chat_id, $text, json_encode(['inline_keyboard' => $buttons]));
+    }
+
+    private function processAddAssistant($assistant_code) {
+        $ast_telegram_id = trim($assistant_code);
+
+        // Chercher l'utilisateur par son ID Telegram unique
+        $sql = "SELECT id, role, company_id FROM telegram_users WHERE telegram_id = :tid LIMIT 1";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute(['tid' => $ast_telegram_id]);
+        $user = $stmt->fetch();
+
+        $this->clearState();
+
+        if (!$user) {
+            $this->sendMessage($this->chat_id, "❌ Impossible de trouver un utilisateur avec le code <b>$ast_telegram_id</b>.\nVérifiez qu'il vous a donné le bon code.", 
+                json_encode(['inline_keyboard' => [[['text' => "🔙 Retour", 'callback_data' => 'manage_assistants']]]]));
+            return;
+        }
+
+        if ($user['role'] === 'driver') {
+             $this->sendMessage($this->chat_id, "❌ Cet utilisateur est un livreur. Vous ne pouvez pas le mettre assistant. Utilisez 'Gérer mes livreurs'.", 
+                json_encode(['inline_keyboard' => [[['text' => "🔙 Retour", 'callback_data' => 'manage_assistants']]]]));
+            return;
+        }
+        
+        if ($user['role'] === 'restaurant' && !empty($user['company_id'])) {
+             $this->sendMessage($this->chat_id, "❌ Cet utilisateur travaille déjà pour un autre restaurant.", 
+                json_encode(['inline_keyboard' => [[['text' => "🔙 Retour", 'callback_data' => 'manage_assistants']]]]));
+            return;
+        }
+
+        // Transformer l'utilisateur en assistant (role restaurant + is_manager 0)
+        $stmt = $this->pdo->prepare("UPDATE telegram_users SET role = 'restaurant', current_mode = 'kitchen', company_id = :cid, is_manager = 0 WHERE id = :uid");
+        $stmt->execute(['cid' => $this->company_id, 'uid' => $user['id']]);
+
+        // ---> NOUVEAU : Récupérer les infos du restaurant <---
+        $stmtComp = $this->pdo->prepare("SELECT companyName, phone FROM company WHERE id = :cid LIMIT 1");
+        $stmtComp->execute(['cid' => $this->company_id]);
+        $comp = $stmtComp->fetch();
+        
+        $compName = $comp ? htmlspecialchars($comp['companyName']) : 'Le Restaurant';
+        $compPhone = $comp && !empty($comp['phone']) ? $comp['phone'] : 'Non renseigné';
+
+        // ---> NOUVEAU : Message détaillé pour l'assistant <---
+        $msgAst = "🎉 <b>Félicitations !</b>\n";
+        $msgAst .= "Vous avez été nommé Assistant pour le restaurant <b>$compName</b>.\n";
+        $msgAst .= "📞 Tél du restaurant : <b>$compPhone</b>\n\n";
+        $msgAst .= "Tapez la commande /cuisine pour ouvrir votre tableau de bord et commencer à gérer les commandes !";
+
+        // Notifications
+        $this->sendMessage($this->chat_id, "✅ L'assistant a été ajouté avec succès !");
+        $this->sendMessage($ast_telegram_id, $msgAst);
+
+        $this->showAssistantManagement();
+    }
+
+    private function removeAssistant($tu_id) {
+        $stmt = $this->pdo->prepare("SELECT telegram_id FROM telegram_users WHERE id = :uid LIMIT 1");
+        $stmt->execute(['uid' => $tu_id]);
+        $user = $stmt->fetch();
+
+        if ($user) {
+            // L'assistant redevient un simple client
+            $stmt = $this->pdo->prepare("UPDATE telegram_users SET role = 'customer', current_mode = 'customer', company_id = NULL, is_manager = 0 WHERE id = :uid");
+            $stmt->execute(['uid' => $tu_id]);
+
+            $this->sendMessage($this->chat_id, "✅ L'assistant a été retiré de votre équipe.");
+            $this->sendMessage($user['telegram_id'], "ℹ️ Vous avez été retiré de la gestion du restaurant. Votre compte est redevenu un compte client standard.\nTapez /client pour rafraîchir.");
+        }
+
+        $this->showAssistantManagement();
     }
 }

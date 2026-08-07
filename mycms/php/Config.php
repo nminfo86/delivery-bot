@@ -107,6 +107,9 @@ class Config
     // Increase to 1500000 (1.5s) or 2000000 (2s) for slow printers.
     public static $printerDelay = 700000; // 0.7s
 
+    // Nombre de messages du bot à conserver dans le chat (ex: 3)
+    public static $maxBotMessagesToKeep = 3;
+
     //************** ******************** MESSAGES ******************************************//
     // Messages to display to users
     // The messages in global.js file must be the same as these

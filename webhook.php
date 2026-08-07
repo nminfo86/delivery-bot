@@ -13,6 +13,7 @@ require_once __DIR__ . '/mycms/php/JsonPrice.php';
 require_once __DIR__ . '/mycms/php/JsonCategory.php';
 
 // 2. Load the isolated Actor Handlers 
+require_once __DIR__ . '/Handlers/TelegramSenderTrait.php';
 require_once __DIR__ . '/Handlers/CustomerHandler.php';
 require_once __DIR__ . '/Handlers/RestaurantHandler.php';
 require_once __DIR__ . '/Handlers/DriverHandler.php';
@@ -101,7 +102,7 @@ if ($callback_query) {
         $stmt->execute(['mode' => $new_mode, 'tid' => $telegram_id]);
         
         $modeNames = ['customer' => 'Client', 'kitchen' => 'Cuisine', 'driver' => 'Livreur'];
-        sendTelegramMessage($chat_id, "🔄 Interface changée vers : Mode <b>" . $modeNames[$new_mode] . "</b>.\nTapez /start pour ouvrir le nouveau menu.");
+        sendTelegramMessage($chat_id, "🔄 Mode <b>" . $modeNames[$new_mode] . "</b>.\nTapez /start pour ouvrir le nouveau menu.");
         exit;
     }
 }
@@ -144,7 +145,7 @@ if (in_array($text, ['/client', '/cuisine', '/livreur'])) {
     
     // Clear the old keyboard and confirm the switch
     $removeKeyboard = json_encode(['remove_keyboard' => true]);
-    sendTelegramMessage($chat_id, "✅ Interface changée vers : Mode <b>" . $modeNames[$new_mode] . "</b>.\n\nTapez /start pour afficher votre nouveau menu.", $removeKeyboard);
+    sendTelegramMessage($chat_id, "✅ Mode <b>" . $modeNames[$new_mode] . "</b>.\n\nTapez /start pour afficher votre nouveau menu.", $removeKeyboard);
     exit;
 }
 // 9. The Core Router

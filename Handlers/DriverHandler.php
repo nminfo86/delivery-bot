@@ -2,6 +2,7 @@
 
 class DriverHandler
 {
+    use TelegramSenderTrait;
     private $pdo;
     private $chat_id;
     private $telegram_id;
@@ -48,9 +49,17 @@ class DriverHandler
         $message = $update['message'] ?? null;
         $callback = $update['callback_query'] ?? null;
 
-        if ($message && isset($message['text'])) {
-            if ($message['text'] === '/start' || $message['text'] === '/dashboard') {
-                $this->showDashboard();
+        if ($message) {
+            // ---> ON EFFACE LE MESSAGE DU LIVREUR ICI <---
+            if (isset($message['message_id'])) {
+                $this->deleteUserMessage($message['message_id']);
+            }
+
+            // Ensuite, on traite le texte s'il y en a un
+            if (isset($message['text'])) {
+                if ($message['text'] === '/start' || $message['text'] === '/dashboard') {
+                    $this->showDashboard();
+                }
             }
             return;
         }
@@ -237,25 +246,31 @@ class DriverHandler
         $this->sendMessage($this->chat_id, "✅ Offre de <b>$amount DA</b> envoyée ! Vous serez notifié si le restaurant accepte votre tarif.");
         $this->showDashboard();
 
-        // --- NOUVEAU : Notifier le restaurant de cette offre ---
+        // --- MODIFICATION ICI : Notifier TOUS les gérants du restaurant ---
         $stmtRest = $this->pdo->prepare("SELECT tu.telegram_id, o.code 
                                          FROM ordere o 
                                          JOIN telegram_users tu ON o.company_id = tu.company_id 
-                                         WHERE o.id = :oid AND tu.role = 'restaurant' LIMIT 1");
+                                         WHERE o.id = :oid AND tu.role = 'restaurant'"); // Retrait du LIMIT 1
         $stmtRest->execute(['oid' => $order_id]);
-        $rest = $stmtRest->fetch();
+        $restOwners = $stmtRest->fetchAll();
 
-        if ($rest) {
+        if (count($restOwners) > 0) {
+            $code = $restOwners[0]['code']; // Le code de la commande est le même pour tous
+            
             $msg = "🛵 <b>Nouvelle Offre de Livraison !</b>\n";
-            $msg .= "Commande : <b>" . $rest['code'] . "</b>\n";
+            $msg .= "Commande : <b>" . $code . "</b>\n";
             $msg .= "Livreur : <b>" . $this->driver['full_name'] . "</b> (⭐ " . $this->driver['rating'] . ")\n";
-            $msg .= "📱 Tél : <b>" . $this->driver['phone'] . "</b>\n"; // <-- AJOUT DU NUMÉRO ICI
+            $msg .= "📱 Tél : <b>" . $this->driver['phone'] . "</b>\n"; 
             $msg .= "Tarif proposé : <b>$amount DA</b>\n";
 
             $buttons = [
                 [['text' => "✅ Accepter cette offre ($amount DA)", 'callback_data' => "accept_bid_" . $bid_id]]
             ];
-            $this->sendMessage($rest['telegram_id'], $msg, json_encode(['inline_keyboard' => $buttons]));
+            
+            // Envoi à chaque gérant
+            foreach ($restOwners as $owner) {
+                $this->sendMessage($owner['telegram_id'], $msg, json_encode(['inline_keyboard' => $buttons]));
+            }
         }
     }
 
@@ -360,25 +375,5 @@ class DriverHandler
         $this->showActiveDeliveries();
     }
 
-    private function sendMessage($chat_id, $text, $reply_markup = null)
-    {
-        $botToken = "8935407487:AAFXdMAi_JjmtuqlyceCmK2ogfNxocNqjNY";
-        $apiUrl = "https://api.telegram.org/bot" . $botToken . "/sendMessage";
-
-        $data = [
-            'chat_id' => $chat_id,
-            'text' => $text,
-            'parse_mode' => 'HTML'
-        ];
-        if ($reply_markup) {
-            $data['reply_markup'] = $reply_markup;
-        }
-
-        $ch = curl_init($apiUrl);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
-        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-        curl_exec($ch);
-        curl_close($ch);
-    }
+   
 }

@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Aug 01, 2026 at 04:35 PM
+-- Generation Time: Aug 07, 2026 at 12:17 PM
 -- Server version: 10.5.29-MariaDB-0+deb11u1
 -- PHP Version: 7.4.33
 
@@ -101,23 +101,6 @@ CREATE TABLE `category` (
   `updateDate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
---
--- Dumping data for table `category`
---
-
-INSERT INTO `category` (`id`, `category`, `prepare`, `display`, `available`, `supplement`, `acceptSupplement`, `color`, `categoryCover`, `minPrice`, `company_id`, `creationDate`, `updateDate`) VALUES
-(50, 'Pizza', 1, 1, 1, 0, 1, '#9b59b6', '../../category-media/50/2022-08-06-11-17-27.jpg', 400, 6, '2022-02-17 19:47:12', '2026-06-04 21:44:37'),
-(51, 'Tacos', 1, 6, 1, 0, 1, '#95a5a6', '../../category-media/51/2022-08-24-15-51-09.jpg', 600, 6, '2022-02-17 19:52:28', '2026-04-19 17:54:22'),
-(55, 'Supplements', 0, 13, 1, 1, 0, '#2980b9', '../../category-media/55/2022-08-26-01-21-45.jpg', 100, 6, '2022-02-17 22:05:50', '2022-12-08 14:44:18'),
-(56, 'Drinks', 0, 12, 1, 0, 0, '#2980b9', '../../category-media/56/2022-02-21-20-51-08.png', 30, 6, '2022-02-21 20:50:50', '2025-05-19 22:07:06'),
-(58, 'Plats', 1, 3, 1, 0, 1, '#1abc9c', '../../category-media/58/2022-12-08-11-00-57.jpg', 500, 6, '2022-08-08 13:50:39', '2026-04-03 22:47:57'),
-(59, 'Sandwich', 1, 9, 1, 0, 1, '#8b008b', '../../category-media/59/2022-08-08-13-55-42.jpg', 300, 6, '2022-08-08 13:55:03', '2026-05-30 21:31:56'),
-(61, 'Dessert', 1, 11, 1, 0, 1, '#2c3e50', '../../category-media/61/2022-12-08-15-24-29.jpg', 250, 6, '2022-08-08 14:12:01', '2026-06-26 15:39:37'),
-(62, 'Hamburgers', 1, 8, 1, 0, 1, '#d35400', '../../category-media/62/2022-08-14-22-12-58.png', 250, 6, '2022-08-14 22:12:27', '2025-05-31 21:56:07'),
-(72, 'Shawarma', 1, 10, 1, 0, 1, '#2980b9', '../../category-media/72/2022-12-08-15-43-10.jpg', 250, 6, '2022-12-08 15:40:21', '2022-12-08 14:45:44'),
-(74, '1/4_Pizza', 0, 11, 1, 1, 0, '#483d8b', NULL, 150, 6, '2025-09-03 22:45:10', '2026-05-31 20:13:49'),
-(80, '1/2_Pizza', 0, 11, 1, 1, 0, '#483d8b', NULL, 250, 6, '2026-04-26 21:36:04', '2026-05-31 20:13:54');
-
 -- --------------------------------------------------------
 
 --
@@ -128,18 +111,6 @@ CREATE TABLE `category_attribute` (
   `category_id` int(11) NOT NULL,
   `attribute_id` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Dumping data for table `category_attribute`
---
-
-INSERT INTO `category_attribute` (`category_id`, `attribute_id`) VALUES
-(50, 1),
-(55, 1),
-(56, 2),
-(61, 3),
-(74, 1),
-(80, 1);
 
 -- --------------------------------------------------------
 
@@ -159,17 +130,6 @@ CREATE TABLE `charge` (
   `updateDate` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
---
--- Dumping data for table `charge`
---
-
-INSERT INTO `charge` (`id`, `amount`, `observation`, `dateTime`, `decaise`, `typeCharge_id`, `company_id`, `creationDate`, `updateDate`) VALUES
-(518, 1000, 'expense yahia', '2026-04-03 00:00:00', 1, 6, 6, '2026-04-03 17:40:47', '2026-04-03 16:40:47'),
-(519, 2500, 'Fromage', '2026-04-17 00:00:00', 1, 1, 6, '2026-04-17 17:53:40', '2026-04-17 16:53:40'),
-(521, 1200, 'Fromage et viande', '2026-05-10 00:00:00', 1, 6, 6, '2026-05-10 17:50:57', '2026-05-10 16:50:57'),
-(522, 2500, 'Viande Hachée', '2026-06-04 00:00:00', 1, 1, 6, '2026-06-04 22:26:21', '2026-06-04 21:26:21'),
-(523, 700, 'Yacine', '2026-06-04 00:00:00', 1, 6, 6, '2026-06-04 22:29:10', '2026-06-04 21:29:10');
-
 -- --------------------------------------------------------
 
 --
@@ -181,6 +141,8 @@ CREATE TABLE `company` (
   `companyName` varchar(200) NOT NULL,
   `companyDescription` varchar(500) DEFAULT NULL,
   `address` varchar(250) NOT NULL,
+  `wilaya_name` varchar(100) DEFAULT NULL,
+  `commune_name` varchar(100) DEFAULT NULL,
   `phone` varchar(50) NOT NULL,
   `email` varchar(50) DEFAULT '',
   `gps` varchar(50) DEFAULT '',
@@ -195,16 +157,10 @@ CREATE TABLE `company` (
   `logo` varchar(200) DEFAULT NULL,
   `carryCode` int(11) NOT NULL,
   `creationDate` datetime NOT NULL,
-  `updateDate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  `updateDate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `social_link` varchar(255) DEFAULT NULL,
+  `rating` decimal(3,2) DEFAULT 5.00
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Dumping data for table `company`
---
-
-INSERT INTO `company` (`id`, `companyName`, `companyDescription`, `address`, `phone`, `email`, `gps`, `latitude`, `longitude`, `day_off`, `is_open`, `consecutive_missed_orders`, `expires_at`, `subscription_status`, `companyCover`, `logo`, `carryCode`, `creationDate`, `updateDate`) VALUES
-(1, 'Bouhezila', 'Bouhezila Computing', 'El Eulma', '0671017715', 'nassim.bouhezila@gmail.com', NULL, NULL, NULL, 'Friday', 1, 0, NULL, 'active', 'company-media/6/2026-05-29-18-43-25.png', 'company-media/6/2026-05-29-18-43-10.png', 0, '2020-11-20 00:00:00', '2026-05-29 17:43:25'),
-(6, 'Lavida', 'Pizza Tacos Plats varies Crêpes', 'Cité El Houari-Boumediene El-Eulma', '0556 08 48 00', '', '', NULL, NULL, 'Friday', 1, 0, NULL, 'active', 'company-media/6/2026-05-29-18-43-25.png', 'company-media/6/2026-05-29-18-43-10.png', 5781, '2022-02-17 16:29:11', '2026-05-29 17:43:25');
 
 -- --------------------------------------------------------
 
@@ -286,14 +242,6 @@ CREATE TABLE `licence` (
   `updateDate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
---
--- Dumping data for table `licence`
---
-
-INSERT INTO `licence` (`id`, `licenceName`, `licence`, `checked`, `adminUsers`, `chefUsers`, `waiterUsers`, `checkoutUsers`, `orderCapability`, `printChef`, `printClient`, `printArabicRecipe`, `cmsCurrency`, `cmsLanguage`, `backupBasePath`, `company_id`, `creationDate`, `updateDate`) VALUES
-(5, 'Licence_LAVIDA', NULL, '2025-04-09 17:31:02', 1, 6, 2, 2, 1, 1, 1, 0, 'DA', 'fr', 'D:\\backup', 6, '2022-02-17 16:29:11', '2026-07-01 20:33:28'),
-(6, 'Licence_eatSmartly', 'ZTQ2NTljN2Qx', '2026-07-29 21:12:12', 1, 6, 2, 2, 1, 1, 1, 0, 'DA', 'fr', 'D:\\backup', 1, '2025-04-09 22:21:09', '2026-07-29 20:12:12');
-
 -- --------------------------------------------------------
 
 --
@@ -311,10 +259,6 @@ CREATE TABLE `media` (
   `creationDate` datetime NOT NULL,
   `updateDate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Dumping data for table `media`
---
 
 -- --------------------------------------------------------
 
@@ -335,85 +279,6 @@ CREATE TABLE `object` (
   `creationDate` datetime NOT NULL,
   `updateDate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Dumping data for table `object`
---
-
-INSERT INTO `object` (`id`, `title`, `description`, `basePrice`, `baseCost`, `observation`, `category_id`, `objAvailable`, `company_id`, `creationDate`, `updateDate`) VALUES
-(122, 'Tacos Poulet', 'Tacos Poulet', 600, 600, '', 51, 1, 6, '2022-02-21 20:39:50', '2026-04-19 17:54:22'),
-(125, 'Pizza Vegetarienne', 'Pizza Vegetarienne', 600, 500, '', 50, 1, 6, '2022-02-24 11:12:52', '2026-04-19 17:55:09'),
-(127, 'Pizza Thon', 'Thon', 500, 500, '', 50, 1, 6, '2022-02-24 11:19:24', '2026-04-26 18:56:43'),
-(182, 'Tacos Viande Hachée', 'Tacos Viande', 800, 400, '', 51, 1, 6, '2022-02-27 14:26:47', '2026-04-10 14:50:30'),
-(183, 'Tacos Mixte', 'Tacos Mixte', 900, 450, '', 51, 1, 6, '2022-02-27 14:30:11', '2026-04-10 14:25:18'),
-(227, 'Eau', 'Eau', 30, 0, '', 56, 1, 6, '2022-03-02 20:47:40', '2022-12-09 13:59:17'),
-(228, 'Pizza Merguez', 'Merguez, Poivron', 550, 550, '', 50, 1, 6, '2022-08-06 11:49:28', '2026-05-16 20:28:27'),
-(229, 'Pizza Dinde Fume', 'Dine Fumé', 550, 550, '', 50, 1, 6, '2022-08-06 14:38:17', '2026-05-16 20:28:54'),
-(242, 'Burger Simple', 'The main ingredients for a burger patty typically include ground beef, an egg, and seasonings like salt and pepper. Other common additions are breadcrumbs, cheese, and onions. ', 250, 150, '', 62, 1, 6, '2022-08-14 22:16:18', '2025-08-19 19:04:50'),
-(263, 'Pizza 3 Fromages', 'Camambert, Fromage blanc', 600, 600, '', 50, 1, 6, '2022-08-24 11:52:13', '2026-05-16 20:29:26'),
-(309, 'Lemonade', 'Lemonade Coca Pepsi Fanta', 100, 0, '', 56, 1, 6, '2022-08-25 00:18:00', '2025-08-19 19:08:22'),
-(310, 'Jus', '', 100, 100, '', 56, 1, 6, '2022-08-25 00:25:15', '2026-04-10 13:42:36'),
-(361, 'Suppl bordure fromage', 'Camembert, Gruyère, Cheddar, Gouda', 100, 100, '', 55, 1, 6, '2022-08-26 01:10:57', '2026-04-24 22:25:42'),
-(362, 'Suppl crevèttes', 'Supplement crevettes', 800, 0, '', 55, 1, 6, '2022-08-26 01:19:33', '2025-05-01 17:14:56'),
-(363, 'Shawarma libanais', 'Sandwich Shawarma Libanais', 300, 0, '', 72, 1, 6, '2022-08-28 18:34:11', '2022-12-08 21:05:42'),
-(366, 'Mayonnaise', 'Mayonnaise', 0, 0, '', 55, 1, 6, '2022-08-28 22:54:07', '2022-08-28 22:02:15'),
-(372, 'Barket frite', 'Barket frite', 100, 0, '', 55, 1, 6, '2022-09-04 22:13:15', '2022-12-08 20:42:24'),
-(373, 'Pizza Champignons', 'Champignon', 500, 500, '', 50, 1, 6, '2022-12-08 11:44:17', '2026-05-16 20:29:52'),
-(375, 'Pizza Boisee Poulet', 'Saumon Fumée', 500, 500, '', 50, 1, 6, '2022-12-08 12:17:33', '2026-05-16 21:07:03'),
-(376, 'Plat steak hachee', '', 650, 0, '', 58, 1, 6, '2022-12-08 12:28:10', '2022-12-08 20:56:02'),
-(377, 'Plat Entercote', '', 800, 0, '', 58, 1, 6, '2022-12-08 12:30:05', '2022-12-08 20:55:43'),
-(378, 'Plat shawarma', '', 500, 0, '', 58, 1, 6, '2022-12-08 12:31:13', '2022-12-08 20:55:11'),
-(379, 'Plat Merguez', '', 700, 0, '', 58, 1, 6, '2022-12-08 12:32:49', '2022-12-08 20:54:42'),
-(380, 'Plat Kebda', '', 900, 0, '', 58, 1, 6, '2022-12-08 12:36:27', '2022-12-08 20:54:26'),
-(381, 'Plat kintaké', '', 700, 0, '', 58, 1, 6, '2022-12-08 12:39:10', '2022-12-08 20:52:46'),
-(382, 'Plat Royal L', '', 1400, 0, '', 58, 1, 6, '2022-12-08 12:39:58', '2022-12-08 11:39:58'),
-(384, 'Plat poulet mariné', 'Plat poulet mariné', 600, 0, '', 58, 1, 6, '2022-12-08 12:44:46', '2022-12-08 20:56:54'),
-(385, 'Plat poulet crispy', 'Plat poulet crispy', 700, 0, '', 58, 1, 6, '2022-12-08 12:47:26', '2022-12-08 21:00:17'),
-(386, 'Plat poulet creme fraiche', '', 650, 0, '', 58, 1, 6, '2022-12-08 12:49:44', '2022-12-08 20:59:34'),
-(387, 'Plat Escalope Griees', 'Plat Escalope Griees', 600, 0, '', 58, 1, 6, '2022-12-08 12:51:06', '2022-12-08 20:59:45'),
-(389, 'Burger Doublee', '', 400, 200, '', 62, 1, 6, '2022-12-08 13:04:53', '2025-08-04 19:22:37'),
-(390, 'Spècial', '', 350, 200, '', 62, 1, 6, '2022-12-08 13:07:37', '2025-08-04 19:22:18'),
-(391, 'Burger Poulet', 'Chiken Burger', 250, 150, '', 62, 1, 6, '2022-12-08 13:08:42', '2025-08-04 19:22:48'),
-(392, 'ساندويش كباب دجاج', '', 300, 150, '', 59, 1, 6, '2022-12-08 13:15:34', '2026-05-30 21:23:05'),
-(393, 'ساندويش كباب لحم', '', 300, 130, '', 59, 1, 6, '2022-12-08 13:16:56', '2026-05-30 21:23:40'),
-(395, 'ساندويش شيش طاووق', '', 350, 200, '', 59, 1, 6, '2022-12-08 13:24:32', '2026-05-30 21:24:25'),
-(396, 'Suppl champignons', 'Doublé Champignons dans la pizza', 100, 0, '', 55, 1, 6, '2022-12-08 13:38:23', '2026-03-23 22:19:35'),
-(399, 'Shawarma khobz', '', 250, 0, '', 72, 1, 6, '2022-12-08 15:45:44', '2022-12-08 14:45:44'),
-(400, 'Shawarma Matlou3', '', 250, 0, '', 72, 1, 6, '2022-12-08 15:51:49', '2022-12-08 14:51:49'),
-(401, 'Suppl camembert', 'Supplement Camembert', 100, 0, '', 55, 1, 6, '2022-12-08 21:46:01', '2022-12-08 20:46:01'),
-(402, 'Suppl chedar', 'Supplement Chedar', 100, 0, '', 55, 1, 6, '2022-12-08 21:46:49', '2022-12-08 20:46:49'),
-(403, 'Suppl poulet fumee', 'Supplement poulet fumee', 100, 0, '', 55, 1, 6, '2022-12-08 21:48:02', '2022-12-08 20:48:02'),
-(442, 'Suppl saumon', 'Supplement saumon', 800, 0, '', 55, 1, 6, '2022-12-09 14:40:23', '2025-04-20 21:19:15'),
-(443, 'Vitajus', 'Jus Vitajus', 30.5, 0, '', 56, 1, 6, '2022-12-09 15:04:07', '2023-02-20 18:11:30'),
-(444, 'Tiramisus', 'Tiramisus  ', 250, 100, '', 61, 1, 6, '2025-08-18 20:57:00', '2025-08-18 19:57:00'),
-(445, 'Crepes', 'Crepes', 250, 100, '', 61, 1, 6, '2025-08-18 21:03:43', '2025-08-18 20:03:54'),
-(507, '-1/4 3 Fromages', 'Camambert, Fromage blanc', 150, 150, '', 74, 1, 6, '2026-05-16 22:07:54', '2026-05-16 21:07:54'),
-(508, '-1/4 Boisee Poulet', 'Saumon Fumée', 150, 150, '', 74, 1, 6, '2026-05-16 22:07:54', '2026-05-16 21:07:54'),
-(509, '-1/4 Champignons', 'Champignon', 150, 150, '', 74, 1, 6, '2026-05-16 22:07:54', '2026-05-16 21:07:54'),
-(510, '-1/4 Dinde Fume', 'Dine Fumé', 150, 150, '', 74, 1, 6, '2026-05-16 22:07:54', '2026-05-16 21:07:54'),
-(511, '-1/4 Merguez', 'Merguez, Poivron', 150, 150, '', 74, 1, 6, '2026-05-16 22:07:54', '2026-05-16 21:07:54'),
-(512, '-1/4 Thon', 'Thon', 150, 150, '', 74, 1, 6, '2026-05-16 22:07:54', '2026-05-16 21:07:54'),
-(513, '-1/4 Vegetarienne', 'Pizza Vegetarienne', 150, 150, '', 74, 1, 6, '2026-05-16 22:07:54', '2026-05-16 21:07:54'),
-(514, '-1/4 Viande', '', 150, 150, '', 74, 1, 6, '2026-05-16 22:07:55', '2026-05-16 21:07:55'),
-(515, '-1/2 3 Fromages', 'Camambert, Fromage blanc', 300, 300, '', 80, 1, 6, '2026-05-16 22:07:56', '2026-05-16 21:07:56'),
-(516, '-1/2 Boisee Poulet', 'Saumon Fumée', 250, 250, '', 80, 1, 6, '2026-05-16 22:07:56', '2026-05-16 21:07:56'),
-(517, '-1/2 Champignons', 'Champignon', 250, 250, '', 80, 1, 6, '2026-05-16 22:07:56', '2026-05-16 21:07:56'),
-(518, '-1/2 Dinde Fume', 'Dine Fumé', 300, 300, '', 80, 1, 6, '2026-05-16 22:07:56', '2026-05-16 21:07:56'),
-(519, '-1/2 Merguez', 'Merguez, Poivron', 300, 300, '', 80, 1, 6, '2026-05-16 22:07:56', '2026-05-16 21:07:56'),
-(520, '-1/2 Thon', 'Thon', 250, 250, '', 80, 1, 6, '2026-05-16 22:07:56', '2026-05-16 21:07:56'),
-(521, '-1/2 Vegetarienne', 'Pizza Vegetarienne', 300, 300, '', 80, 1, 6, '2026-05-16 22:07:56', '2026-05-16 21:07:56'),
-(522, '-1/2 Viande', '', 250, 250, '', 80, 1, 6, '2026-05-16 22:07:57', '2026-05-16 21:07:57'),
-(523, 'Pizza Viande', '', 500, 500, '', 50, 1, 6, '2026-05-30 21:33:47', '2026-05-30 20:33:47'),
-(524, 'Pizza Poulet', '', 500, 500, '', 50, 1, 6, '2026-05-30 21:40:29', '2026-05-30 20:40:29'),
-(525, 'Pizza peperoni', 'Pizza peperoni', 600, 600, '', 50, 1, 6, '2026-05-30 21:59:51', '2026-05-30 20:59:59'),
-(526, 'Pizza Boisée Crevette', 'Pizza Boisée Crevette ', 600, 600, '', 50, 1, 6, '2026-05-30 22:05:20', '2026-05-30 21:05:20'),
-(527, 'Pizza Boisée 4 Fromages', 'Pizza Boisée 4 Fromages', 600, 600, '', 50, 1, 6, '2026-05-30 22:06:49', '2026-05-30 21:06:49'),
-(528, 'ساندويش كريسبي', '', 300, 150, '', 59, 1, 6, '2026-05-30 22:24:55', '2026-05-30 21:24:55'),
-(529, 'ساندويش كبدة دجاج', '', 300, 150, '', 59, 1, 6, '2026-05-30 22:25:55', '2026-05-30 21:25:55'),
-(530, 'ساندويش شاورما سورية', '', 300, 150, '', 59, 1, 6, '2026-05-30 22:28:49', '2026-05-30 21:28:49'),
-(531, 'ساندويش فاهيتا', '', 300, 150, '', 59, 1, 6, '2026-05-30 22:29:42', '2026-05-30 21:29:42'),
-(532, 'Pizza Simple', 'Pizza Simple', 400, 200, '', 50, 1, 6, '2026-06-04 22:44:37', '2026-06-04 21:44:37'),
-(533, 'كنافة بالجبن', '', 400, 400, '', 61, 1, 6, '2026-06-26 16:58:01', '2026-06-26 15:58:01');
 
 --
 -- Triggers `object`
@@ -617,105 +482,6 @@ CREATE TABLE `price` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Dumping data for table `price`
---
-
-INSERT INTO `price` (`object_id`, `attributeValue_id`, `price`, `cost`) VALUES
-(125, 1, 600, 600),
-(125, 2, 900, 900),
-(127, 1, 500, 500),
-(127, 2, 900, 900),
-(127, 3, 1200, 1200),
-(228, 1, 550, 550),
-(228, 2, 900, 900),
-(228, 3, 1300, 1300),
-(229, 1, 550, 550),
-(229, 2, 950, 950),
-(229, 3, 1100, 1100),
-(263, 1, 600, 600),
-(263, 2, 900, 900),
-(263, 3, 1250, 1250),
-(309, 7, 150, 0),
-(309, 8, 100, 0),
-(309, 23, 100, 0),
-(361, 1, 100, 100),
-(361, 2, 150, 150),
-(361, 3, 200, 200),
-(373, 1, 500, 500),
-(373, 2, 900, 900),
-(373, 3, 1300, 1300),
-(375, 1, 500, 500),
-(375, 2, 900, 900),
-(375, 3, 1200, 1200),
-(396, 1, 100, 0),
-(396, 2, 200, 0),
-(396, 3, 300, 0),
-(445, 9, 250, 100),
-(445, 10, 300, 150),
-(445, 12, 500, 250),
-(507, 1, 150, 150),
-(507, 2, 250, 250),
-(507, 3, 350, 350),
-(508, 1, 150, 150),
-(508, 2, 250, 250),
-(508, 3, 300, 300),
-(509, 1, 150, 150),
-(509, 2, 250, 250),
-(509, 3, 350, 350),
-(510, 1, 150, 150),
-(510, 2, 250, 250),
-(510, 3, 300, 300),
-(511, 1, 150, 150),
-(511, 2, 250, 250),
-(511, 3, 350, 350),
-(512, 1, 150, 150),
-(512, 2, 250, 250),
-(512, 3, 300, 300),
-(513, 1, 150, 150),
-(513, 2, 250, 250),
-(514, 1, 150, 150),
-(514, 2, 250, 250),
-(514, 3, 300, 300),
-(515, 1, 300, 300),
-(515, 2, 450, 450),
-(515, 3, 650, 650),
-(516, 1, 250, 250),
-(516, 2, 450, 450),
-(516, 3, 600, 600),
-(517, 1, 250, 250),
-(517, 2, 450, 450),
-(517, 3, 650, 650),
-(518, 1, 300, 300),
-(518, 2, 500, 500),
-(518, 3, 550, 550),
-(519, 1, 300, 300),
-(519, 2, 450, 450),
-(519, 3, 650, 650),
-(520, 1, 250, 250),
-(520, 2, 450, 450),
-(520, 3, 600, 600),
-(521, 1, 300, 300),
-(521, 2, 450, 450),
-(522, 1, 250, 250),
-(522, 2, 450, 450),
-(522, 3, 600, 600),
-(523, 1, 500, 500),
-(523, 2, 750, 750),
-(523, 3, 1100, 1100),
-(524, 1, 500, 500),
-(524, 2, 700, 700),
-(524, 3, 1000, 1000),
-(525, 1, 600, 600),
-(525, 2, 800, 800),
-(525, 3, 1200, 1200),
-(526, 1, 600, 600),
-(526, 2, 900, 900),
-(526, 3, 1400, 1400),
-(527, 1, 600, 600),
-(527, 2, 850, 850),
-(527, 3, 1300, 1300);
-
---
 -- Triggers `price`
 --
 DELIMITER $$
@@ -815,18 +581,6 @@ CREATE TABLE `printer` (
   `creationDate` datetime NOT NULL,
   `updateDate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Dumping data for table `printer`
---
-
-INSERT INTO `printer` (`id`, `printerName`, `printerIP`, `printerPort`, `printerProtocole`, `labelSize`, `company_id`, `creationDate`, `updateDate`) VALUES
-(2, 'Caisse_printer1', 'USB', '9100', 'ESC', '80', 6, '2022-01-15 15:25:32', '2026-05-11 18:31:19'),
-(6, 'Printer-pizza', 'USB', '9100', 'ESC', '80', 6, '2022-01-15 15:25:32', '2026-06-26 15:38:40'),
-(7, 'Printer-Plat-Sandwich', 'USB', '9100', 'ESC', '80', 6, '2022-01-15 15:25:32', '2026-06-26 15:38:44'),
-(10, 'Printer-chawarma', 'USB', '9100', 'ESC', '80', 6, '2022-01-15 15:25:32', '2026-06-26 15:38:52'),
-(14, 'printer-all', '192.168.1.100', '9100', 'TSPL', '40-20', 6, '2026-06-20 18:12:33', '2026-06-26 16:09:14'),
-(15, 'Printer-dessert', 'USB', '9100', 'ESC', '80', 6, '2026-06-26 16:39:12', '2026-06-26 15:39:12');
 
 -- --------------------------------------------------------
 
@@ -1065,14 +819,6 @@ CREATE TABLE `system_migrations` (
   `applied_at` timestamp NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
---
--- Dumping data for table `system_migrations`
---
-
-INSERT INTO `system_migrations` (`id`, `migration_name`, `applied_at`) VALUES
-(1, '001_initial_schema.sql', '2026-04-30 18:23:10'),
-(2, '002_performance_indexes.sql', '2026-07-01 20:05:09');
-
 -- --------------------------------------------------------
 
 --
@@ -1087,22 +833,6 @@ CREATE TABLE `tabl` (
   `creationDate` datetime NOT NULL,
   `updateDate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Dumping data for table `tabl`
---
-
-INSERT INTO `tabl` (`id`, `tableName`, `tableCode`, `tableFree`, `creationDate`, `updateDate`) VALUES
-(39, 'Table-01', 6731, 0, '2020-09-19 18:29:30', '2026-06-20 17:43:14'),
-(40, 'Table-02', 7243, 0, '2020-09-19 18:29:39', '2026-04-22 21:06:05'),
-(41, 'Table-03', 6109, 0, '2020-09-19 18:29:44', '2025-09-01 19:12:57'),
-(42, 'Table-04', 3300, 0, '2020-09-19 18:29:50', '2026-04-04 21:06:34'),
-(43, 'Table-05', 3177, 1, '2020-09-19 18:30:12', '2026-03-30 17:38:56'),
-(44, 'Table-06', 5259, 0, '2020-09-19 18:30:19', '2025-05-01 19:23:09'),
-(45, 'Table-07', 7380, 1, '2022-03-01 19:40:39', '2025-05-02 20:01:49'),
-(46, 'Table-08', 8276, 1, '2022-03-01 19:40:54', '2025-07-20 12:18:50'),
-(48, 'Table-09', 2415, 0, '2022-08-28 11:43:26', '2022-12-07 20:26:09'),
-(49, 'Table-10', 1413, 0, '2022-08-28 11:43:38', '2022-12-31 00:29:16');
 
 -- --------------------------------------------------------
 
@@ -1121,7 +851,11 @@ CREATE TABLE `telegram_users` (
   `company_id` int(11) DEFAULT NULL,
   `user_id` int(11) DEFAULT NULL,
   `created_at` datetime NOT NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `current_state` varchar(100) DEFAULT NULL,
+  `latitude` decimal(10,8) DEFAULT NULL,
+  `longitude` decimal(11,8) DEFAULT NULL,
+  `commune_name` varchar(100) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -1173,21 +907,6 @@ CREATE TABLE `user` (
   `updateDate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
---
--- Dumping data for table `user`
---
-
-INSERT INTO `user` (`id`, `username`, `password`, `name`, `familyName`, `email`, `connected`, `accessErrors`, `nextAccess`, `role_id`, `company_id`, `printer_id`, `creationDate`, `updateDate`) VALUES
-(19, 'superAdmin', 'D96478671EC726974DFE7A766AD0B2C602E264DB9A21D5CC9F8EAFD9AC6478D1097B5502555ED06A6F7A1FB97B002973358EB1AA872D5ED23D9A5C847F2977F1', 'Nassim', 'Bouhezila', 'nassim.bouhezila@gmail.com', 0, 0, '1000-01-01 00:00:00', 6, 1, NULL, '2020-11-20 00:00:00', '2025-09-05 07:32:56'),
-(27, 'caisse', '3c9909afec25354d551dae21590bb26e38d53f2173b8d3dc3eee4c047e7ab1c1eb8b85103e3be7ba613b31bb5c9c36214dc9f14a42fd7a2fdb84856bca5c44c2', 'Caissier', 'LaCantine', '', 0, 0, '1000-01-01 00:00:00', 3, 6, 2, '2022-02-17 20:41:21', '2026-07-07 18:55:39'),
-(28, 'chef-plats-sandwich', '3c9909afec25354d551dae21590bb26e38d53f2173b8d3dc3eee4c047e7ab1c1eb8b85103e3be7ba613b31bb5c9c36214dc9f14a42fd7a2fdb84856bca5c44c2', 'Chef', 'Plats/Sandwich', '', 0, 0, '1000-01-01 00:00:00', 2, 6, 7, '2022-02-17 20:42:00', '2026-05-11 18:35:09'),
-(33, 'chef-dessert', '3c9909afec25354d551dae21590bb26e38d53f2173b8d3dc3eee4c047e7ab1c1eb8b85103e3be7ba613b31bb5c9c36214dc9f14a42fd7a2fdb84856bca5c44c2', 'Dessert', 'Dessert', '', 0, 0, '1000-01-01 00:00:00', 2, 6, 15, '2022-08-26 00:26:21', '2026-06-26 15:40:19'),
-(34, 'chef-chawarma', '3c9909afec25354d551dae21590bb26e38d53f2173b8d3dc3eee4c047e7ab1c1eb8b85103e3be7ba613b31bb5c9c36214dc9f14a42fd7a2fdb84856bca5c44c2', 'Chawarma', 'Chawarma', '', 0, 0, '1000-01-01 00:00:00', 2, 6, 10, '2022-08-26 00:27:44', '2022-08-25 23:52:25'),
-(38, 'chef-all', '3c9909afec25354d551dae21590bb26e38d53f2173b8d3dc3eee4c047e7ab1c1eb8b85103e3be7ba613b31bb5c9c36214dc9f14a42fd7a2fdb84856bca5c44c2', 'chef', 'All', '', 0, 0, '1000-01-01 00:00:00', 2, 6, 6, '2025-04-15 06:10:08', '2026-07-02 11:15:23'),
-(39, 'admin', '823d7b1a519d6455dd2c793c55992a7967e2bf4861914d97b75a07bbfe11fa1e55bfbcef4ca1c6f785bf1d0184d8df53e4e7e66fa29ca643e25c18f7d74188f0', 'Admin', 'Admin', '', 0, 0, '1000-01-01 00:00:00', 1, 6, NULL, '2025-04-21 20:53:47', '2026-07-07 18:55:47'),
-(40, 'serveur', '3c9909afec25354d551dae21590bb26e38d53f2173b8d3dc3eee4c047e7ab1c1eb8b85103e3be7ba613b31bb5c9c36214dc9f14a42fd7a2fdb84856bca5c44c2', 'waiter', 'waiter', '', 0, 0, '1000-01-01 00:00:00', 4, 6, 2, '2025-05-02 20:25:33', '2026-07-02 11:15:32'),
-(46, 'chef-pizz', '3c9909afec25354d551dae21590bb26e38d53f2173b8d3dc3eee4c047e7ab1c1eb8b85103e3be7ba613b31bb5c9c36214dc9f14a42fd7a2fdb84856bca5c44c2', 'chef', 'Pizza', '', 0, 0, '1000-01-01 00:00:00', 2, 6, 6, '2025-07-11 20:08:57', '2025-07-22 13:00:29');
-
 -- --------------------------------------------------------
 
 --
@@ -1198,19 +917,6 @@ CREATE TABLE `user_category` (
   `user_id` int(11) NOT NULL,
   `category_id` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Dumping data for table `user_category`
---
-
-INSERT INTO `user_category` (`user_id`, `category_id`) VALUES
-(28, 58),
-(28, 51),
-(28, 62),
-(28, 59),
-(34, 72),
-(46, 50),
-(33, 61);
 
 -- --------------------------------------------------------
 
@@ -1491,19 +1197,19 @@ ALTER TABLE `attribute_value`
 -- AUTO_INCREMENT for table `category`
 --
 ALTER TABLE `category`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=81;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `charge`
 --
 ALTER TABLE `charge`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=524;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `company`
 --
 ALTER TABLE `company`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `delivery_bids`
@@ -1527,25 +1233,25 @@ ALTER TABLE `driver_profiles`
 -- AUTO_INCREMENT for table `licence`
 --
 ALTER TABLE `licence`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `media`
 --
 ALTER TABLE `media`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1057;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `object`
 --
 ALTER TABLE `object`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=534;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `ordere`
 --
 ALTER TABLE `ordere`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=578;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `ordere_archive`
@@ -1557,7 +1263,7 @@ ALTER TABLE `ordere_archive`
 -- AUTO_INCREMENT for table `printer`
 --
 ALTER TABLE `printer`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `role`
@@ -1569,7 +1275,7 @@ ALTER TABLE `role`
 -- AUTO_INCREMENT for table `suborder`
 --
 ALTER TABLE `suborder`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1654;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `suborder_archive`
@@ -1587,19 +1293,19 @@ ALTER TABLE `subscription_payments`
 -- AUTO_INCREMENT for table `supplement`
 --
 ALTER TABLE `supplement`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=146;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `system_migrations`
 --
 ALTER TABLE `system_migrations`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `tabl`
 --
 ALTER TABLE `tabl`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=65;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `telegram_users`
@@ -1617,13 +1323,13 @@ ALTER TABLE `type_charge`
 -- AUTO_INCREMENT for table `user`
 --
 ALTER TABLE `user`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=50;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `vat`
 --
 ALTER TABLE `vat`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- Constraints for dumped tables

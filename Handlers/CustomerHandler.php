@@ -1,6 +1,9 @@
 <?php
 
 class CustomerHandler {
+
+    use TelegramSenderTrait; 
+
     private $pdo;
     private $chat_id;
     private $telegram_id;
@@ -20,6 +23,11 @@ class CustomerHandler {
         $callback = $update['callback_query'] ?? null;
 
         if ($message) {
+
+        // Efface ce que l'utilisateur vient de taper pour garder le chat propre
+        if (isset($message['message_id'])) {
+            $this->deleteUserMessage($message['message_id']);
+        }
             $text = trim($message['text'] ?? '');
             
             if ($text === '/start') {
@@ -301,17 +309,22 @@ class CustomerHandler {
         $this->notifyRestaurantOwner($rest_id, $orderCode, $totalPrice, $phone);
     }
 
-    private function notifyRestaurantOwner($rest_id, $orderCode, $totalPrice, $phone) {
-        $stmt = $this->pdo->prepare("SELECT telegram_id FROM telegram_users WHERE company_id = :cid AND role = 'restaurant' LIMIT 1");
-        $stmt->execute(['cid' => $rest_id]);
-        $owner = $stmt->fetch();
+   private function notifyRestaurantOwner($rest_id, $orderCode, $totalPrice, $phone) {
+    // Retrait du "LIMIT 1" pour récupérer TOUS les admins de ce resto
+    $stmt = $this->pdo->prepare("SELECT telegram_id FROM telegram_users WHERE company_id = :cid AND role = 'restaurant'");
+    $stmt->execute(['cid' => $rest_id]);
+    $owners = $stmt->fetchAll(); // fetchAll au lieu de fetch
 
-        if ($owner) {
-            $msg = "🔔 <b>NOUVELLE COMMANDE REÇUE !</b>\n\nCode : <b>{$orderCode}</b>\nMontant : <b>{$totalPrice} DA</b>\nTel : {$phone}";
-            $buttons = [[['text' => "👨‍🍳 Ouvrir le Tableau de Bord", 'callback_data' => "dash"]]];
+    if (count($owners) > 0) {
+        $msg = "🔔 <b>NOUVELLE COMMANDE REÇUE !</b>\n\nCode : <b>{$orderCode}</b>\nMontant : <b>{$totalPrice} DA</b>\nTel : {$phone}";
+        $buttons = [[['text' => "👨‍🍳 Ouvrir le Tableau de Bord", 'callback_data' => "dash"]]];
+        
+        // On boucle pour notifier chaque gérant/assistant
+        foreach ($owners as $owner) {
             $this->sendMessage($owner['telegram_id'], $msg, json_encode(['inline_keyboard' => $buttons]));
         }
     }
+}
 
     private function clearUserState() {
         $stmt = $this->pdo->prepare("UPDATE telegram_users SET current_state = NULL WHERE telegram_id = :tid");
@@ -351,7 +364,7 @@ class CustomerHandler {
     }
 
     private function showCitySelection() {
-        $text = "Pour trouver des restaurants, choisir votre ville ou partager votre position 📍:";
+        $text = "Pour trouver des restaurants, choisir votre ville ou 📍 partager votre position:";
         $gpsKeyboard = ['keyboard' => [[['text' => '📍 Partager ma position GPS', 'request_location' => true]]], 'resize_keyboard' => true, 'one_time_keyboard' => true];
         $this->sendMessage($this->chat_id, $text, json_encode($gpsKeyboard));
 
@@ -380,7 +393,8 @@ class CustomerHandler {
         $this->sendMessage($this->chat_id, "Veuillez sélectionner votre Commune :", json_encode(['inline_keyboard' => $buttons]));
     }
 
-   private function findRestaurantsByCommune($commune) {
+   
+    private function findRestaurantsByCommune($commune) {
         // Filter out expired subscriptions
         $sql = "SELECT id, companyName, day_off 
                 FROM company 
@@ -449,8 +463,18 @@ class CustomerHandler {
         }
     }
 
-    private function showCategories($rest_id) {
-        // Exclude the 1/4 and 1/2 fractional categories
+   private function showCategories($rest_id) {
+        // 1. Récupérer les infos (Nom, Tél, Lien social, Note) - L'adresse a été retirée
+        $stmtInfo = $this->pdo->prepare("SELECT companyName, phone, social_link, rating FROM company WHERE id = :id LIMIT 1");
+        $stmtInfo->execute(['id' => $rest_id]);
+        $restaurant = $stmtInfo->fetch();
+
+        if (!$restaurant) {
+            $this->sendMessage($this->chat_id, "⚠️ Restaurant introuvable.");
+            return;
+        }
+
+        // 2. Récupérer les catégories du menu (Exclure les fractions 1/4 et 1/2)
         $sql = "SELECT id, category FROM category 
                 WHERE company_id = :rest_id 
                 AND available = 1 
@@ -463,17 +487,49 @@ class CustomerHandler {
         $stmt->execute(['rest_id' => $rest_id]);
         $categories = $stmt->fetchAll();
 
+        // 3. Construire l'en-tête du message avec les détails du restaurant
+        $text = "🏪 <b>" . htmlspecialchars($restaurant['companyName']) . "</b>\n";
+        
+        // Affichage de la note
+        $rating = !empty($restaurant['rating']) ? number_format($restaurant['rating'], 1) : "5.0";
+        $text .= "⭐ Avis : <b>" . $rating . "/5</b>\n";
+        
+        // --- NOUVEAU : Formatage du téléphone en lien texte cliquable ---
+        if (!empty($restaurant['phone'])) {
+           // Nettoie le numéro (enlève le premier 0 et les espaces)
+            $num = ltrim(str_replace(' ', '', $restaurant['phone']), '0');
+            // Affiche formaté avec l'indicatif
+            $text .= "📞 +213" . htmlspecialchars($num) . "\n";
+        }
+        
+        if (!empty($restaurant['social_link'])) {
+            $text .= "🔗 <a href='" . htmlspecialchars($restaurant['social_link']) . "'>Visiter notre page</a>\n";
+        }
+        
+        $text .= "━━━━━━━━━━━━━━━━━\n";
+        $text .= "😋 Que souhaitez-vous commander ?";
+
+        // 4. Générer les boutons des catégories
         if (count($categories) > 0) {
             $buttons = []; $row = [];
             foreach ($categories as $i => $cat) {
-                $row[] = ['text' => "📂 " . $cat['category'], 'callback_data' => "c_" . $cat['id'] . "_r_" . $rest_id];
-                if (count($row) == 2 || $i == count($categories) - 1) { $buttons[] = $row; $row = []; }
+                // Appel de la fonction pour trouver la bonne icône
+                $icon = $this->getMenuIcon($cat['category']);
+                
+                $row[] = ['text' => $icon . " " . $cat['category'], 'callback_data' => "c_" . $cat['id'] . "_r_" . $rest_id];
+                if (count($row) == 2 || $i == count($categories) - 1) { 
+                    $buttons[] = $row; 
+                    $row = []; 
+                }
             }
             $buttons[] = [['text' => "🛒 Voir Panier", 'callback_data' => "cart_r_" . $rest_id]];
             $buttons[] = [['text' => "🔙 Retour aux villes", 'callback_data' => "manual_loc"]];
-            $this->sendMessage($this->chat_id, "😋 Que souhaitez-vous commander ?", json_encode(['inline_keyboard' => $buttons]));
+            
+            $this->sendMessage($this->chat_id, $text, json_encode(['inline_keyboard' => $buttons, 'disable_web_page_preview' => true]));
         } else {
-            $this->sendMessage($this->chat_id, "⚠️ Ce restaurant n'a pas encore de menu actif.");
+            // Si le restaurant n'a pas de menu
+            $buttons = [[['text' => "🔙 Retour", 'callback_data' => "manual_loc"]]];
+            $this->sendMessage($this->chat_id, $text . "\n\n⚠️ Ce restaurant n'a pas encore de menu actif.", json_encode(['inline_keyboard' => $buttons, 'disable_web_page_preview' => true]));
         }
     }
 
@@ -485,8 +541,11 @@ class CustomerHandler {
         if (count($items) > 0) {
             $buttons = [];
             foreach ($items as $item) {
+                // Appel de la fonction pour l'article
+                $icon = $this->getMenuIcon($item['title']);
+                
                 $priceLabel = ($item['basePrice'] > 0) ? " (" . $item['basePrice'] . " DA)" : " (Voir Tailles)";
-                $buttons[] = [['text' => "🍕 " . $item['title'] . $priceLabel, 'callback_data' => "i_" . $item['id'] . "_r_" . $rest_id]];
+                $buttons[] = [['text' => $icon . " " . $item['title'] . $priceLabel, 'callback_data' => "i_" . $item['id'] . "_r_" . $rest_id]];
             }
             $buttons[] = [['text' => "🛒 Voir Panier", 'callback_data' => "cart_r_" . $rest_id]];
             $buttons[] = [['text' => "🔙 Retour aux catégories", 'callback_data' => "r_" . $rest_id]];
@@ -520,19 +579,22 @@ class CustomerHandler {
         $this->sendMessage($this->chat_id, $text, json_encode(['inline_keyboard' => $buttons]));
     }
 
-    private function sendMessage($chat_id, $text, $reply_markup = null) {
-        $botToken = "8935407487:AAFXdMAi_JjmtuqlyceCmK2ogfNxocNqjNY"; 
-        $apiUrl = "https://api.telegram.org/bot" . $botToken . "/sendMessage";
+    private function getMenuIcon($text) {
+        // La fonction stripos cherche si un mot est contenu dans la chaîne (sans se soucier des majuscules/minuscules)
+        if (stripos($text, 'pizza') !== false) return "🍕";
+        if (stripos($text, 'burger') !== false || stripos($text, 'hamburger') !== false) return "🍔";
+        if (stripos($text, 'tacos') !== false || stripos($text, 'taco') !== false) return "🌮";
+        if (stripos($text, 'dessert') !== false || stripos($text, 'crêpe') !== false || stripos($text, 'crepe') !== false || stripos($text, 'tiramisu') !== false) return "🍰";
+        if (stripos($text, 'boisson') !== false || stripos($text, 'drink') !== false || stripos($text, 'jus') !== false || stripos($text, 'eau') !== false || stripos($text, 'lemonade') !== false) return "🥤";
+        if (stripos($text, 'sandwich') !== false || stripos($text, 'shawarma') !== false || stripos($text, 'chawarma') !== false || stripos($text, 'kebab') !== false) return "🌯";
+        if (stripos($text, 'frite') !== false) return "🍟";
+        if (stripos($text, 'salade') !== false) return "🥗";
+        if (stripos($text, 'plat') !== false) return "🥘";
+        if (stripos($text, 'suppl') !== false) return "➕";
         
-        $data = ['chat_id' => $chat_id, 'text' => $text, 'parse_mode' => 'HTML'];
-        if ($reply_markup) $data['reply_markup'] = $reply_markup;
-        
-        $ch = curl_init($apiUrl);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
-        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-        curl_exec($ch);
-        curl_close($ch);
+        // Icône générique par défaut si le mot n'est pas reconnu
+        return "🍽️"; 
     }
+
 }
 ?>
